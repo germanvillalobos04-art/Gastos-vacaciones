@@ -16,8 +16,10 @@
       --bg-gray: #f4f6fa;
       --text-main: #1f2937;
       --text-muted: #6b7280;
+      --danger: #e63946;
+      --success: #2a9d8f;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
     body { background-color: var(--bg-gray); padding-bottom: 90px; color: var(--text-main); }
 
     /* Pantalla PIN */
@@ -47,7 +49,11 @@
     .balance-title { font-size: 0.85rem; opacity: 0.85; margin-bottom: 6px; }
     .balance-amount { font-size: 2.3rem; font-weight: 800; margin-bottom: 12px; }
 
-    /* Botones Acciones */
+    /* Barra Progreso Presupuesto */
+    .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.25); border-radius: 10px; overflow: hidden; margin-top: 10px; }
+    .progress-bar-fill { height: 100%; background: #48cae4; border-radius: 10px; transition: width 0.4s ease; }
+
+    /* Botones Acciones Rápidas */
     .quick-actions {
       display: flex; justify-content: space-around; margin: -42px 16px 20px 16px;
       background: white; padding: 16px 10px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
@@ -59,7 +65,7 @@
       width: 48px; height: 48px; background: #eaf2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0056b3;
     }
 
-    /* Tarjetas de Contenido */
+    /* Tarjetas */
     .card { background: white; margin: 16px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
     .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
     .card-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; }
@@ -69,20 +75,35 @@
     .chart-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
     .chart-center-text .amount { font-size: 1.15rem; font-weight: 800; color: #003875; }
 
+    /* Resumen de Quién Pagó */
+    .payers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+    .payer-box { background: #f8fafc; padding: 12px 14px; border-radius: 14px; border: 1px solid #e2e8f0; }
+    .payer-name { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
+    .payer-amount { font-size: 1.1rem; font-weight: 700; color: #003875; margin-top: 4px; }
+
     /* Movimientos */
-    .movement-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f3f5; }
-    .movement-desc { font-weight: 600; font-size: 0.9rem; }
-    .movement-sub { font-size: 0.75rem; color: var(--text-muted); }
-    .movement-amount { font-weight: 700; color: #e63946; font-size: 0.95rem; }
+    .movement-item {
+      display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f3f5; cursor: pointer;
+    }
+    .movement-item:active { background: #f8fafc; }
+    .movement-desc { font-weight: 600; font-size: 0.95rem; }
+    .movement-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+    .movement-amount { font-weight: 700; color: var(--danger); font-size: 1rem; text-align: right; }
+    .tap-hint { font-size: 0.68rem; color: #3b82f6; margin-top: 2px; }
 
     /* Modal Formulario */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; align-items: flex-end; }
     .modal.active { display: flex; }
-    .modal-content { background: white; width: 100%; border-radius: 26px 26px 0 0; padding: 24px; max-height: 85vh; overflow-y: auto; }
+    .modal-content { background: white; width: 100%; border-radius: 26px 26px 0 0; padding: 24px; max-height: 88vh; overflow-y: auto; animation: slideUp 0.2s ease-out; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 6px; }
-    .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #d1d5db; font-size: 1rem; }
-    .submit-btn { width: 100%; background: #0056b3; color: white; border: none; padding: 14px; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #d1d5db; font-size: 1rem; outline: none; }
+    
+    .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+    .submit-btn { flex: 1; background: #0056b3; color: white; border: none; padding: 14px; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .delete-btn { background: #fee2e2; color: #dc2626; border: none; padding: 14px 18px; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
   </style>
 </head>
 <body>
@@ -91,7 +112,7 @@
   <div id="pinScreen">
     <i data-lucide="lock" style="width: 48px; height: 48px; margin-bottom: 10px;"></i>
     <h2>Finanzas Vacaciones</h2>
-    <p style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px;">Ingresa tu PIN de 4 dígitos</p>
+    <p style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px;">Ingresa el PIN de acceso</p>
     <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric">
     <button class="btn-pin" onclick="verificarPin()">Ingresar</button>
     <p id="pinError" style="color: #ff6b6b; font-size: 0.85rem; margin-top: 10px; display: none;">PIN incorrecto</p>
@@ -102,21 +123,27 @@
     <div class="header">
       <div class="header-top">
         <h1>Vacaciones 🌴</h1>
-        <i data-lucide="shield-check"></i>
+        <i data-lucide="shield-check" onclick="cerrarSesion()" style="cursor: pointer;"></i>
       </div>
       <div class="balance-card">
         <div class="balance-title">Saldo disponible</div>
         <div class="balance-amount" id="saldoDisponible">$0</div>
+        
         <div style="font-size: 0.85rem; opacity: 0.9; display: flex; justify-content: space-between; align-items: center;">
           <span>Presupuesto: <strong id="presupuestoTotal">$0</strong></span>
           <span style="text-decoration: underline; cursor: pointer; font-size: 0.8rem;" onclick="editarPresupuesto()">Editar monto</span>
         </div>
+        
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
+        </div>
+        <div style="font-size: 0.72rem; opacity: 0.8; margin-top: 6px; text-align: right;" id="porcentajeTexto">0% gastado</div>
       </div>
     </div>
 
     <!-- ACCIONES RÁPIDAS -->
     <div class="quick-actions">
-      <button class="action-btn" onclick="abrirModal()">
+      <button class="action-btn" onclick="abrirModalNuevo()">
         <div class="action-icon"><i data-lucide="plus-circle"></i></div>
         Gasto
       </button>
@@ -126,7 +153,23 @@
       </button>
     </div>
 
-    <!-- GRÁFICO TIPO SALUD FINANCIERA -->
+    <!-- TARJETA: QUIÉN HA PAGADO QUÉ -->
+    <div class="card">
+      <div class="card-title">Balance de Pagos</div>
+      <div class="card-subtitle">Total aportado durante el viaje</div>
+      <div class="payers-grid">
+        <div class="payer-box">
+          <div class="payer-name">Él</div>
+          <div class="payer-amount" id="pagoEl">$0</div>
+        </div>
+        <div class="payer-box">
+          <div class="payer-name">Ella</div>
+          <div class="payer-amount" id="pagoElla">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO DISTRIBUCIÓN -->
     <div class="card">
       <div class="card-title">Distribución de Gastos</div>
       <div class="card-subtitle">Gastos acumulados por categoría</div>
@@ -139,23 +182,29 @@
       </div>
     </div>
 
-    <!-- MOVIMIENTOS RECIENTES -->
+    <!-- MOVIMIENTOS -->
     <div class="card">
-      <div class="card-title">Últimos movimientos</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div class="card-title" style="margin-bottom:0;">Movimientos</div>
+        <span style="font-size:0.75rem; color:#6b7280;" id="contadorMovimientos">0 gastos</span>
+      </div>
+      <div class="card-subtitle">Toca cualquier gasto para editarlo o borrarlo</div>
       <div id="listaMovimientos">
         <div style="text-align:center; padding: 20px; color: #9ca3af;">Cargando movimientos...</div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL PARA REGISTRAR GASTO -->
+  <!-- MODAL EDITAR / AGREGAR GASTO -->
   <div class="modal" id="modalGasto">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 style="font-weight:700;">Añadir Nuevo Gasto</h3>
+        <h3 id="modalTitulo" style="font-weight:700;">Añadir Nuevo Gasto</h3>
         <button onclick="cerrarModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
       </div>
-      <form id="gastoForm" onsubmit="enviarGasto(event)">
+      <form id="gastoForm" onsubmit="guardarGasto(event)">
+        <input type="hidden" id="gastoId">
+        
         <div class="form-group">
           <label>Monto ($)</label>
           <input type="number" id="monto" required placeholder="Ej: 15000" inputmode="numeric">
@@ -190,7 +239,17 @@
             <option value="Efectivo">Efectivo</option>
           </select>
         </div>
-        <button type="submit" class="submit-btn" id="btnGuardar">Guardar Gasto</button>
+        <div class="form-group">
+          <label>Fecha (DD/MM)</label>
+          <input type="text" id="fechaGasto" placeholder="Ej: 22/10">
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="delete-btn" id="btnBorrar" onclick="eliminarGastoActual()" style="display:none;">
+            <i data-lucide="trash-2" style="width:18px;"></i> Borrar
+          </button>
+          <button type="submit" class="submit-btn" id="btnGuardar">Guardar Gasto</button>
+        </div>
       </form>
     </div>
   </div>
@@ -198,22 +257,28 @@
   <script>
     lucide.createIcons();
 
-    // Tu URL directa de Firebase
     const FIREBASE_BASE_URL = "https://gastos-522f9-default-rtdb.firebaseio.com/";
-
-    // PIN predeterminado (puedes cambiarlo aquí si deseas)
-    const PIN_CORRECTO = "1234";
+    const PIN_CORRECTO = "1610";
 
     let chartInstance = null;
-    let presupuestoActual = 500000;
+    let presupuestoActual = 400000;
+    let gastosCache = {};
 
     function formatCLP(val) {
       return '$' + Number(val || 0).toLocaleString('es-CL');
     }
 
+    // Recordar sesión en el teléfono si ya ingresó el PIN
+    if (localStorage.getItem('auth_vacaciones') === PIN_CORRECTO) {
+      document.getElementById('pinScreen').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'block';
+      window.onload = cargarDatos;
+    }
+
     function verificarPin() {
       const pin = document.getElementById('pinInput').value;
       if (pin === PIN_CORRECTO) {
+        localStorage.setItem('auth_vacaciones', PIN_CORRECTO);
         document.getElementById('pinScreen').style.display = 'none';
         document.getElementById('appContainer').style.display = 'block';
         cargarDatos();
@@ -222,18 +287,26 @@
       }
     }
 
+    function cerrarSesion() {
+      if (confirm("¿Cerrar sesión en esta app?")) {
+        localStorage.removeItem('auth_vacaciones');
+        location.reload();
+      }
+    }
+
     async function cargarDatos() {
       try {
-        // Cargar presupuesto
         const resPres = await fetch(FIREBASE_BASE_URL + "presupuesto.json");
         const presData = await resPres.json();
         if (presData) presupuestoActual = Number(presData);
 
-        // Cargar gastos
         const resGastos = await fetch(FIREBASE_BASE_URL + "gastos.json");
         const gastosData = await resGastos.json();
+        gastosCache = gastosData || {};
 
         let totalGastado = 0;
+        let totalEl = 0;
+        let totalElla = 0;
         const categoriaTotales = {};
         const lista = [];
 
@@ -243,6 +316,11 @@
             const m = Number(g.monto) || 0;
             totalGastado += m;
             categoriaTotales[g.categoria] = (categoriaTotales[g.categoria] || 0) + m;
+            
+            if (g.pagador === 'Él') totalEl += m;
+            else if (g.pagador === 'Ella') totalElla += m;
+            else if (g.pagador === 'Ambos') { totalEl += m / 2; totalElla += m / 2; }
+
             lista.push({ ...g, id: key });
           });
         }
@@ -251,8 +329,16 @@
         document.getElementById('presupuestoTotal').innerText = formatCLP(presupuestoActual);
         document.getElementById('saldoDisponible').innerText = formatCLP(saldoDisponible);
         document.getElementById('chartTotalGastos').innerText = formatCLP(totalGastado);
+        document.getElementById('pagoEl').innerText = formatCLP(totalEl);
+        document.getElementById('pagoElla').innerText = formatCLP(totalElla);
+        document.getElementById('contadorMovimientos').innerText = lista.length + ' gastos';
 
-        // Gráfico de Dona
+        // Porcentaje y barra de consumo
+        const pct = presupuestoActual > 0 ? Math.min(100, Math.round((totalGastado / presupuestoActual) * 100)) : 0;
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('porcentajeTexto').innerText = pct + '% gastado del presupuesto';
+
+        // Gráfico
         const labels = Object.keys(categoriaTotales);
         const dataValues = Object.values(categoriaTotales);
 
@@ -278,16 +364,18 @@
         if (lista.length === 0) {
           listaCont.innerHTML = '<div style="text-align:center; padding:15px; color:#9ca3af;">Aún no hay movimientos registrados</div>';
         } else {
-          listaCont.innerHTML = lista.slice(0, 15).map(m => `
-            <div class="movement-item">
+          listaCont.innerHTML = lista.map(m => `
+            <div class="movement-item" onclick="abrirModalEditar('${m.id}')">
               <div>
                 <div class="movement-desc">${m.descripcion}</div>
-                <div class="movement-sub">${m.fecha} • ${m.categoria} (${m.pagador})</div>
+                <div class="movement-sub">${m.fecha || 'Hoy'} • ${m.categoria} (${m.pagador})</div>
+                <div class="tap-hint">Tocar para editar / borrar</div>
               </div>
               <div class="movement-amount">-${formatCLP(m.monto)}</div>
             </div>
           `).join('');
         }
+        lucide.createIcons();
       } catch (err) {
         console.error("Error al cargar datos:", err);
       }
@@ -304,40 +392,89 @@
       }
     }
 
-    function abrirModal() { document.getElementById('modalGasto').classList.add('active'); }
+    function abrirModalNuevo() {
+      document.getElementById('modalTitulo').innerText = "Añadir Nuevo Gasto";
+      document.getElementById('btnGuardar').innerText = "Guardar Gasto";
+      document.getElementById('btnBorrar').style.display = "none";
+      document.getElementById('gastoForm').reset();
+      document.getElementById('gastoId').value = "";
+      
+      const hoy = new Date();
+      document.getElementById('fechaGasto').value = hoy.getDate().toString().padStart(2, '0') + '/' + (hoy.getMonth() + 1).toString().padStart(2, '0');
+      document.getElementById('modalGasto').classList.add('active');
+    }
+
+    function abrirModalEditar(id) {
+      const item = gastosCache[id];
+      if (!item) return;
+
+      document.getElementById('modalTitulo').innerText = "Editar Gasto";
+      document.getElementById('btnGuardar').innerText = "Actualizar Gasto";
+      document.getElementById('btnBorrar').style.display = "flex";
+
+      document.getElementById('gastoId').value = id;
+      document.getElementById('monto').value = item.monto;
+      document.getElementById('descripcion').value = item.descripcion;
+      document.getElementById('categoria').value = item.categoria;
+      document.getElementById('pagador').value = item.pagador;
+      document.getElementById('metodo').value = item.metodo || 'Tarjeta';
+      document.getElementById('fechaGasto').value = item.fecha || '';
+
+      document.getElementById('modalGasto').classList.add('active');
+      lucide.createIcons();
+    }
+
     function cerrarModal() { document.getElementById('modalGasto').classList.remove('active'); }
 
-    async function enviarGasto(e) {
+    async function guardarGasto(e) {
       e.preventDefault();
       const btn = document.getElementById('btnGuardar');
       btn.innerText = 'Guardando...';
       btn.disabled = true;
 
-      const hoy = new Date();
-      const fechaStr = hoy.getDate().toString().padStart(2, '0') + '/' + (hoy.getMonth() + 1).toString().padStart(2, '0');
-
+      const id = document.getElementById('gastoId').value;
       const payload = {
-        monto: document.getElementById('monto').value,
+        monto: Number(document.getElementById('monto').value),
         descripcion: document.getElementById('descripcion').value,
         categoria: document.getElementById('categoria').value,
         pagador: document.getElementById('pagador').value,
         metodo: document.getElementById('metodo').value,
-        fecha: fechaStr
+        fecha: document.getElementById('fechaGasto').value
       };
 
       try {
-        await fetch(FIREBASE_BASE_URL + "gastos.json", {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        btn.innerText = 'Guardar Gasto';
+        if (id) {
+          // Edición
+          await fetch(`${FIREBASE_BASE_URL}gastos/${id}.json`, {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // Nuevo
+          await fetch(FIREBASE_BASE_URL + "gastos.json", {
+            method: 'POST',
+            body: JSON.stringify(payload)
+          });
+        }
+        btn.innerText = 'Guardado';
         btn.disabled = false;
-        document.getElementById('gastoForm').reset();
         cerrarModal();
         cargarDatos();
       } catch (err) {
         btn.innerText = 'Error al guardar';
         btn.disabled = false;
+      }
+    }
+
+    async function eliminarGastoActual() {
+      const id = document.getElementById('gastoId').value;
+      if (!id) return;
+      if (confirm("¿Estás seguro de que deseas eliminar este gasto?")) {
+        await fetch(`${FIREBASE_BASE_URL}gastos/${id}.json`, {
+          method: 'DELETE'
+        });
+        cerrarModal();
+        cargarDatos();
       }
     }
   </script>
