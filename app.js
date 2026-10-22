@@ -6,16 +6,20 @@ const PIN_CORRECTO = "1610";
 let chartInstance = null;
 let presupuestoActual = 400000;
 let gastosCache = {};
+let ubicacionActualDetectada = "Chile";
 
 function formatCLP(val) {
   return '$' + Number(val || 0).toLocaleString('es-CL');
 }
 
-// Recordar sesión en el teléfono si el PIN ya fue validado
+// Iniciar sesión persistente
 if (localStorage.getItem('auth_vacaciones') === PIN_CORRECTO) {
   document.getElementById('pinScreen').style.display = 'none';
   document.getElementById('appContainer').style.display = 'block';
-  window.addEventListener('DOMContentLoaded', cargarDatos);
+  window.addEventListener('DOMContentLoaded', () => {
+    cargarDatos();
+    obtenerClimaYUbicacion();
+  });
 }
 
 function verificarPin() {
@@ -25,6 +29,7 @@ function verificarPin() {
     document.getElementById('pinScreen').style.display = 'none';
     document.getElementById('appContainer').style.display = 'block';
     cargarDatos();
+    obtenerClimaYUbicacion();
   } else {
     document.getElementById('pinError').style.display = 'block';
   }
@@ -37,6 +42,74 @@ function cerrarSesion() {
   }
 }
 
+// -------------------------------------------------------------
+// CLIMA Y GEOLOCALIZACIÓN
+// -------------------------------------------------------------
+async function obtenerClimaYUbicacion() {
+  if (!navigator.geolocation) {
+    document.getElementById('climaTexto').innerText = "Clima no disponible";
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    try {
+      // 1. Obtener nombre de la ciudad vía OpenStreetMap (Nominatim)
+      const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`);
+      const geoData = await geoRes.json();
+      const ciudad = geoData.address.city || geoData.address.town || geoData.address.county || geoData.address.state || "Ubicación actual";
+      ubicacionActualDetectada = ciudad;
+
+      // 2. Obtener Clima en tiempo real vía Open-Meteo
+      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day`);
+      const weatherData = await weatherRes.json();
+
+      const temp = Math.round(weatherData.current.temperature_2m);
+      const code = weatherData.current.weather_code;
+      const isDay = weatherData.current.is_day === 1;
+
+      aplicarEstiloClima(code, isDay, temp, ciudad);
+    } catch (e) {
+      console.error("Error obteniendo clima:", e);
+      document.getElementById('climaTexto').innerText = "Modo vacaciones";
+    }
+  }, (err) => {
+    document.getElementById('climaTexto').innerText = "Ubicación desactivada";
+  });
+}
+
+function aplicarEstiloClima(code, isDay, temp, ciudad) {
+  const header = document.getElementById('headerClima');
+  const badgeText = document.getElementById('climaTexto');
+  header.classList.remove('theme-sunny', 'theme-cloudy', 'theme-rainy', 'theme-night');
+
+  let desc = "Despejado";
+  let themeClass = "theme-sunny";
+
+  if (!isDay) {
+    themeClass = "theme-night";
+    desc = "Noche";
+  } else if (code === 0 || code === 1) {
+    themeClass = "theme-sunny";
+    desc = "Soleado";
+  } else if (code >= 2 && code <= 48) {
+    themeClass = "theme-cloudy";
+    desc = "Nublado";
+  } else if (code >= 51) {
+    themeClass = "theme-rainy";
+    desc = "Lluvia";
+  }
+
+  header.classList.add(themeClass);
+  badgeText.innerText = `${ciudad} • ${temp}°C, ${desc}`;
+  lucide.createIcons();
+}
+
+// -------------------------------------------------------------
+// GESTIÓN DE DATOS (FIREBASE)
+// -------------------------------------------------------------
 async function cargarDatos() {
   try {
     const resPres = await fetch(FIREBASE_BASE_URL + "presupuesto.json");
@@ -108,7 +181,11 @@ async function cargarDatos() {
         <div class="movement-item" onclick="abrirModalEditar('${m.id}')">
           <div>
             <div class="movement-desc">${m.descripcion}</div>
-            <div class="movement-sub">${m.fecha || 'Hoy'} • ${m.categoria} (${m.pagador})</div>
+            <div class="movement-sub">
+              <span>${m.fecha || 'Hoy'}</span> • 
+              <span>${m.categoria} (${m.pagador})</span>
+              ${m.ubicacion ? ` • <span>📍 ${m.ubicacion}</span>` : ''}
+            </div>
             <div class="tap-hint">Tocar para editar / borrar</div>
           </div>
           <div class="movement-amount">-${formatCLP(m.monto)}</div>
@@ -141,7 +218,13 @@ function abrirModalNuevo() {
   
   const hoy = new Date();
   document.getElementById('fechaGasto').value = hoy.getDate().toString().padStart(2, '0') + '/' + (hoy.getMonth() + 1).toString().padStart(2, '0');
+  
+  // Asignar ubicación detectada
+  document.getElementById('ubicacionGasto').value = ubicacionActualDetectada;
+  document.getElementById('ubicacionTextoModal').innerText = `Ubicación: ${ubicacionActualDetectada}`;
+
   document.getElementById('modalGasto').classList.add('active');
+  lucide.createIcons();
 }
 
 function abrirModalEditar(id) {
@@ -159,6 +242,10 @@ function abrirModalEditar(id) {
   document.getElementById('pagador').value = item.pagador;
   document.getElementById('metodo').value = item.metodo || 'Tarjeta';
   document.getElementById('fechaGasto').value = item.fecha || '';
+  
+  const ubic = item.ubicacion || 'Sin ubicación';
+  document.getElementById('ubicacionGasto').value = item.ubicacion || '';
+  document.getElementById('ubicacionTextoModal').innerText = `Ubicación: ${ubic}`;
 
   document.getElementById('modalGasto').classList.add('active');
   lucide.createIcons();
@@ -179,7 +266,8 @@ async function guardarGasto(e) {
     categoria: document.getElementById('categoria').value,
     pagador: document.getElementById('pagador').value,
     metodo: document.getElementById('metodo').value,
-    fecha: document.getElementById('fechaGasto').value
+    fecha: document.getElementById('fechaGasto').value,
+    ubicacion: document.getElementById('ubicacionGasto').value || ubicacionActualDetectada
   };
 
   try {
