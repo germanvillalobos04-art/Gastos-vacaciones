@@ -1,4 +1,4 @@
-// URL y PIN
+// URL de Firebase y PIN de acceso
 const FIREBASE_BASE_URL = "https://gastos-522f9-default-rtdb.firebaseio.com/";
 const PIN_CORRECTO = "1610";
 
@@ -11,14 +11,13 @@ function formatCLP(val) {
   return '$' + Number(val || 0).toLocaleString('es-CL');
 }
 
-// Inicializar iconos de forma segura
 function initIcons() {
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
   }
 }
 
-// Manejo del PIN
+// Comprobación de PIN
 function verificarPin() {
   const input = document.getElementById('pinInput');
   const errorMsg = document.getElementById('pinError');
@@ -48,11 +47,10 @@ function cerrarSesion() {
   }
 }
 
-// Auto-login seguro
+// Auto-login al iniciar
 window.addEventListener('DOMContentLoaded', () => {
   initIcons();
   
-  // Enter en el teclado para acceder directamente
   const pinInput = document.getElementById('pinInput');
   if (pinInput) {
     pinInput.addEventListener('keypress', (e) => {
@@ -72,14 +70,13 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // -------------------------------------------------------------
-// CLIMA Y UBICACIÓN (A PRUEBA DE ERRORES)
+// CLIMA, UBICACIÓN Y EFECTOS ANIMADOS
 // -------------------------------------------------------------
 async function obtenerClimaYUbicacion() {
   const badge = document.getElementById('climaTexto');
   if (!badge) return;
 
   try {
-    // Consulta directa por IP sin pedir permisos ni trabar la pantalla
     const res = await fetch('https://ipapi.co/json/');
     const data = await res.json();
     
@@ -106,9 +103,11 @@ async function obtenerClimaYUbicacion() {
 function aplicarEstiloClima(code, isDay, temp, ciudad) {
   const header = document.getElementById('headerClima');
   const badgeText = document.getElementById('climaTexto');
+  const animContainer = document.getElementById('weatherAnimationLayer');
   if (!header || !badgeText) return;
 
   header.classList.remove('theme-sunny', 'theme-cloudy', 'theme-rainy', 'theme-night');
+  if (animContainer) animContainer.innerHTML = '';
 
   let desc = "Despejado";
   let themeClass = "theme-sunny";
@@ -116,20 +115,73 @@ function aplicarEstiloClima(code, isDay, temp, ciudad) {
   if (!isDay) {
     themeClass = "theme-night";
     desc = "Noche";
+    crearEstrellas(animContainer);
   } else if (code === 0 || code === 1) {
     themeClass = "theme-sunny";
     desc = "Soleado";
+    crearSol(animContainer);
   } else if (code >= 2 && code <= 48) {
     themeClass = "theme-cloudy";
     desc = "Nublado";
+    crearNubes(animContainer);
   } else if (code >= 51) {
     themeClass = "theme-rainy";
     desc = "Lluvia";
+    crearLluvia(animContainer);
   }
 
   header.classList.add(themeClass);
   badgeText.innerText = `${ciudad} • ${temp}°C, ${desc}`;
   initIcons();
+}
+
+// Generadores de partículas animadas
+function crearSol(container) {
+  if (!container) return;
+  const flare = document.createElement('div');
+  flare.className = 'sun-flare';
+  container.appendChild(flare);
+}
+
+function crearLluvia(container) {
+  if (!container) return;
+  for (let i = 0; i < 24; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'rain-drop';
+    drop.style.left = Math.random() * 100 + '%';
+    drop.style.animationDelay = (Math.random() * 0.7) + 's';
+    drop.style.animationDuration = (0.5 + Math.random() * 0.3) + 's';
+    container.appendChild(drop);
+  }
+}
+
+function crearNubes(container) {
+  if (!container) return;
+  for (let i = 0; i < 3; i++) {
+    const cloud = document.createElement('div');
+    cloud.className = 'cloud-shape';
+    cloud.style.width = (90 + i * 40) + 'px';
+    cloud.style.height = (28 + i * 10) + 'px';
+    cloud.style.top = (15 + i * 35) + 'px';
+    cloud.style.animationDelay = (i * 6) + 's';
+    cloud.style.animationDuration = (16 + i * 4) + 's';
+    container.appendChild(cloud);
+  }
+}
+
+function crearEstrellas(container) {
+  if (!container) return;
+  for (let i = 0; i < 18; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = 1.5 + Math.random() * 2;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = Math.random() * 95 + '%';
+    star.style.top = Math.random() * 85 + '%';
+    star.style.animationDelay = (Math.random() * 3) + 's';
+    container.appendChild(star);
+  }
 }
 
 // -------------------------------------------------------------
