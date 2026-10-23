@@ -121,7 +121,7 @@
     .balance-title { font-size: 0.85rem; opacity: 0.85; margin-bottom: 6px; }
     .balance-amount { font-size: 2.3rem; font-weight: 800; margin-bottom: 8px; }
 
-    /* Acciones Rápidas (3 botones) */
+    /* Acciones Rápidas */
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -145,7 +145,7 @@
     .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
     .card-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; }
 
-    /* Tarjetas de Cuentas */
+    /* Cuentas */
     .accounts-section-title {
       font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #6b7280; margin: 12px 0 6px 0; letter-spacing: 0.5px;
     }
@@ -217,7 +217,7 @@
       <div class="header-content">
         <div class="header-top">
           <div>
-            <h1>Gastos 🌴</h1>
+            <h1>Germán y Marcela 🌴</h1>
             <div class="weather-badge" id="weatherBadge" style="margin-top: 4px;">
               <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
               <span id="climaTexto">Consultando clima...</span>
@@ -227,11 +227,11 @@
         </div>
         
         <div class="balance-card">
-          <div class="balance-title">Dinero total disponible (todas las cuentas)</div>
+          <div class="balance-title">Dinero disponible (ambos)</div>
           <div class="balance-amount" id="saldoDisponible">$0</div>
-          <div style="font-size: 0.8rem; opacity: 0.9; display: flex; justify-content: space-between;">
-            <span>Él: <strong id="totalEl">$0</strong></span>
-            <span>Ella: <strong id="totalElla">$0</strong></span>
+          <div style="font-size: 0.85rem; opacity: 0.95; display: flex; justify-content: space-between; margin-top: 4px;">
+            <span>Germán: <strong id="totalEl">$0</strong></span>
+            <span>Marcela: <strong id="totalElla">$0</strong></span>
           </div>
         </div>
       </div>
@@ -318,7 +318,7 @@
         <div class="form-group">
           <label id="labelCuenta">¿De qué cuenta sale el dinero?</label>
           <select id="cuentaSeleccionada" required>
-            <!-- Se llena dinámicamente con las cuentas -->
+            <!-- Opciones cargadas dinámicamente -->
           </select>
         </div>
 
@@ -386,8 +386,8 @@
         <div class="form-group">
           <label>Titular de la Cuenta</label>
           <select id="titularCuenta">
-            <option value="Él">Él</option>
-            <option value="Ella">Ella</option>
+            <option value="Germán">Germán</option>
+            <option value="Marcela">Marcela</option>
           </select>
         </div>
 
@@ -407,7 +407,7 @@
   </div>
 
   <!-- SCRIPT VERSIONADO -->
-  <script src="app.js?v=4.0"></script>
+  <script src="app.js?v=4.5"></script>
 
   <!-- SERVICE WORKER -->
   <script>
