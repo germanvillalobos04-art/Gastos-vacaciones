@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gastos</title>
+  <title>Gastos y Finanzas</title>
 
   <!-- Control de Caché -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -37,7 +37,7 @@
       --success: #10b981;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg-gray); padding-bottom: 90px; color: var(--text-main); }
+    body { background-color: var(--bg-gray); padding-bottom: 95px; color: var(--text-main); }
 
     /* Pantalla PIN */
     #pinScreen {
@@ -159,10 +159,33 @@
     .account-sub { font-size: 0.72rem; color: var(--text-muted); }
     .account-balance { font-size: 1.05rem; font-weight: 700; color: #003875; }
 
-    .add-account-btn {
+    .add-btn-dashed {
       width: 100%; border: 1.5px dashed #cbd5e1; background: #f8fafc; color: #0056b3; padding: 12px;
       border-radius: 14px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex;
       align-items: center; justify-content: center; gap: 6px; margin-top: 10px;
+    }
+
+    /* Tarjetas de Créditos */
+    .credit-card-item {
+      background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 16px; margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .credit-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .credit-title { font-weight: 700; font-size: 1rem; color: #0f172a; }
+    .credit-badge { font-size: 0.72rem; background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 10px; font-weight: 600; }
+    .credit-progress-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 10px; overflow: hidden; margin: 10px 0 6px 0; }
+    .credit-progress-fill { height: 100%; background: #0056b3; border-radius: 10px; transition: width 0.3s ease; }
+    .credit-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; font-size: 0.8rem; }
+    .credit-info-label { color: var(--text-muted); font-size: 0.72rem; }
+    .credit-info-val { font-weight: 700; color: #1e293b; }
+    .credit-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .pay-installment-btn {
+      flex: 1; background: #0056b3; color: white; border: none; padding: 10px; border-radius: 12px;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .edit-credit-btn {
+      background: #f1f5f9; color: #475569; border: none; padding: 10px 14px; border-radius: 12px;
+      font-size: 0.8rem; font-weight: 600; cursor: pointer;
     }
 
     /* Gráfico */
@@ -180,6 +203,21 @@
     .movement-amount-expense { font-weight: 700; color: var(--danger); font-size: 1rem; text-align: right; }
     .movement-amount-income { font-weight: 700; color: var(--success); font-size: 1rem; text-align: right; }
     .tap-hint { font-size: 0.68rem; color: #3b82f6; margin-top: 2px; }
+
+    /* Barra de Navegación Inferior Fija */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 68px;
+      background: white; border-top: 1px solid #e2e8f0; display: flex;
+      justify-content: space-around; align-items: center; z-index: 1000;
+      box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+    }
+    .nav-tab {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      background: none; border: none; color: #94a3b8; font-size: 0.75rem; font-weight: 600;
+      cursor: pointer; width: 50%; padding: 8px 0;
+    }
+    .nav-tab.active { color: #0056b3; }
+    .nav-tab i { width: 22px; height: 22px; }
 
     /* Modales */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 10000; align-items: flex-end; }
@@ -202,7 +240,7 @@
   <!-- PANTALLA PIN -->
   <div id="pinScreen">
     <i data-lucide="lock" style="width: 48px; height: 48px; margin-bottom: 10px;"></i>
-    <h2>Gastos</h2>
+    <h2>Gastos y Finanzas</h2>
     <p style="font-size: 0.85rem; opacity: 0.8; margin-top: 4px;">Ingresa el PIN de acceso</p>
     <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" inputmode="numeric">
     <button class="btn-pin" onclick="verificarPin()">Ingresar</button>
@@ -211,88 +249,131 @@
 
   <!-- DASHBOARD PRINCIPAL -->
   <div id="appContainer" style="display: none;">
-    <div class="header" id="headerClima">
-      <div class="weather-animation-layer" id="weatherAnimationLayer"></div>
+    
+    <!-- ================= PESTAÑA 1: INICIO (GASTOS Y MOVIMIENTOS) ================= -->
+    <div id="tabInicio" class="tab-view">
+      <div class="header" id="headerClima">
+        <div class="weather-animation-layer" id="weatherAnimationLayer"></div>
 
-      <div class="header-content">
-        <div class="header-top">
-          <div>
-            <h1>Germán y Marcela 🌴</h1>
-            <div class="weather-badge" id="weatherBadge" style="margin-top: 4px;">
-              <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
-              <span id="climaTexto">Consultando clima...</span>
+        <div class="header-content">
+          <div class="header-top">
+            <div>
+              <h1>Germán y Marcela 🌴</h1>
+              <div class="weather-badge" id="weatherBadge" style="margin-top: 4px;">
+                <i data-lucide="map-pin" style="width: 14px; height: 14px;"></i>
+                <span id="climaTexto">Consultando clima...</span>
+              </div>
+            </div>
+            <i data-lucide="shield-check" onclick="cerrarSesion()" style="cursor: pointer;"></i>
+          </div>
+          
+          <div class="balance-card">
+            <div class="balance-title">Dinero disponible (ambos)</div>
+            <div class="balance-amount" id="saldoDisponible">$0</div>
+            <div style="font-size: 0.85rem; opacity: 0.95; display: flex; justify-content: space-between; margin-top: 4px;">
+              <span>Germán: <strong id="totalEl">$0</strong></span>
+              <span>Marcela: <strong id="totalElla">$0</strong></span>
             </div>
           </div>
-          <i data-lucide="shield-check" onclick="cerrarSesion()" style="cursor: pointer;"></i>
         </div>
-        
-        <div class="balance-card">
-          <div class="balance-title">Dinero disponible (ambos)</div>
-          <div class="balance-amount" id="saldoDisponible">$0</div>
-          <div style="font-size: 0.85rem; opacity: 0.95; display: flex; justify-content: space-between; margin-top: 4px;">
-            <span>Germán: <strong id="totalEl">$0</strong></span>
-            <span>Marcela: <strong id="totalElla">$0</strong></span>
+      </div>
+
+      <!-- ACCIONES RÁPIDAS -->
+      <div class="quick-actions">
+        <button class="action-btn" onclick="abrirModalNuevo('gasto')">
+          <div class="action-icon"><i data-lucide="minus-circle"></i></div>
+          Gasto
+        </button>
+        <button class="action-btn" onclick="abrirModalNuevo('ingreso')">
+          <div class="action-icon income"><i data-lucide="plus-circle"></i></div>
+          Ingreso
+        </button>
+        <button class="action-btn" onclick="cargarDatos()">
+          <div class="action-icon"><i data-lucide="refresh-cw"></i></div>
+          Actualizar
+        </button>
+      </div>
+
+      <!-- GRÁFICO DISTRIBUCIÓN -->
+      <div class="card">
+        <div class="card-title">Distribución de Gastos</div>
+        <div class="card-subtitle">Gastos acumulados por categoría</div>
+        <div class="chart-container">
+          <canvas id="gastosChart"></canvas>
+          <div class="chart-center-text">
+            <div class="amount" id="chartTotalGastos">$0</div>
+            <div style="font-size: 0.75rem; color: #6b7280;">Gastado</div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ACCIONES RÁPIDAS -->
-    <div class="quick-actions">
-      <button class="action-btn" onclick="abrirModalNuevo('gasto')">
-        <div class="action-icon"><i data-lucide="minus-circle"></i></div>
-        Gasto
-      </button>
-      <button class="action-btn" onclick="abrirModalNuevo('ingreso')">
-        <div class="action-icon income"><i data-lucide="plus-circle"></i></div>
-        Ingreso
-      </button>
-      <button class="action-btn" onclick="cargarDatos()">
-        <div class="action-icon"><i data-lucide="refresh-cw"></i></div>
-        Actualizar
-      </button>
-    </div>
-
-    <!-- TARJETA: RESUMEN DE CUENTAS BANCARIAS -->
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <div class="card-title" style="margin-bottom:0;">Cuentas y Saldos</div>
-        <span style="font-size:0.75rem; color:#6b7280;" id="contadorCuentas">0 cuentas</span>
-      </div>
-      <div class="card-subtitle">Toca cualquier cuenta para editar su saldo</div>
-      
-      <div id="contenedorCuentas">
-        <div style="text-align:center; padding: 15px; color: #9ca3af;">Cargando cuentas...</div>
-      </div>
-
-      <button class="add-account-btn" onclick="abrirModalCuenta()">
-        <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Agregar Cuenta Bancaria
-      </button>
-    </div>
-
-    <!-- GRÁFICO DISTRIBUCIÓN -->
-    <div class="card">
-      <div class="card-title">Distribución de Gastos</div>
-      <div class="card-subtitle">Gastos acumulados por categoría</div>
-      <div class="chart-container">
-        <canvas id="gastosChart"></canvas>
-        <div class="chart-center-text">
-          <div class="amount" id="chartTotalGastos">$0</div>
-          <div style="font-size: 0.75rem; color: #6b7280;">Gastado</div>
+      <!-- MOVIMIENTOS -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div class="card-title" style="margin-bottom:0;">Movimientos</div>
+          <span style="font-size:0.75rem; color:#6b7280;" id="contadorMovimientos">0 movimientos</span>
+        </div>
+        <div class="card-subtitle">Toca cualquier movimiento para editarlo o borrarlo</div>
+        <div id="listaMovimientos">
+          <div style="text-align:center; padding: 20px; color: #9ca3af;">Cargando movimientos...</div>
         </div>
       </div>
     </div>
 
-    <!-- MOVIMIENTOS -->
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-        <div class="card-title" style="margin-bottom:0;">Movimientos</div>
-        <span style="font-size:0.75rem; color:#6b7280;" id="contadorMovimientos">0 movimientos</span>
+    <!-- ================= PESTAÑA 2: CUENTAS Y CRÉDITOS ================= -->
+    <div id="tabCreditos" class="tab-view" style="display: none;">
+      
+      <!-- Cabecera Azul de Sección -->
+      <div style="background: linear-gradient(180deg, #002244 0%, #004b99 100%); color:white; padding: 32px 20px 24px 20px; border-radius: 0 0 24px 24px;">
+        <h1 style="font-size: 1.3rem; font-weight:700;">Cuentas y Créditos 💳</h1>
+        <p style="font-size: 0.85rem; opacity: 0.85; margin-top: 4px;">Control de bancos, líneas y cuotas vigentes</p>
       </div>
-      <div class="card-subtitle">Toca cualquier movimiento para editarlo o borrarlo</div>
-      <div id="listaMovimientos">
-        <div style="text-align:center; padding: 20px; color: #9ca3af;">Cargando movimientos...</div>
+
+      <!-- SECCIÓN CUENTAS BANCARIAS -->
+      <div class="card" style="margin-top: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div class="card-title" style="margin-bottom:0;">Cuentas Bancarias</div>
+          <span style="font-size:0.75rem; color:#6b7280;" id="contadorCuentasSec">0 cuentas</span>
+        </div>
+        <div class="card-subtitle">Saldos disponibles por cuenta</div>
+        
+        <div id="contenedorCuentasSec">
+          <div style="text-align:center; padding: 15px; color: #9ca3af;">Cargando cuentas...</div>
+        </div>
+
+        <button class="add-btn-dashed" onclick="abrirModalCuenta()">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Agregar Cuenta Bancaria
+        </button>
       </div>
+
+      <!-- SECCIÓN CRÉDITOS Y CUOTAS -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div class="card-title" style="margin-bottom:0;">Créditos Solicitados</div>
+          <span style="font-size:0.75rem; color:#6b7280;" id="contadorCreditos">0 activos</span>
+        </div>
+        <div class="card-subtitle">Seguimiento de cuotas y deuda restante</div>
+        
+        <div id="contenedorCreditos">
+          <div style="text-align:center; padding: 15px; color: #9ca3af;">No hay créditos registrados</div>
+        </div>
+
+        <button class="add-btn-dashed" onclick="abrirModalCredito()">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Registrar Nuevo Crédito
+        </button>
+      </div>
+    </div>
+
+    <!-- BARRA INFERIOR DE NAVEGACIÓN -->
+    <div class="bottom-nav">
+      <button class="nav-tab active" id="btnNavInicio" onclick="cambiarPestana('inicio')">
+        <i data-lucide="wallet"></i>
+        <span>Inicio</span>
+      </button>
+      <button class="nav-tab" id="btnNavCreditos" onclick="cambiarPestana('creditos')">
+        <i data-lucide="landmark"></i>
+        <span>Cuentas y Créditos</span>
+      </button>
     </div>
   </div>
 
@@ -318,7 +399,7 @@
         <div class="form-group">
           <label id="labelCuenta">¿De qué cuenta sale el dinero?</label>
           <select id="cuentaSeleccionada" required>
-            <!-- Opciones cargadas dinámicamente -->
+            <!-- Llenado dinámicamente -->
           </select>
         </div>
 
@@ -335,6 +416,7 @@
             <option value="Transporte">Transporte</option>
             <option value="Excursiones y Entradas">Excursiones y Entradas</option>
             <option value="Compras / Recuerdos">Compras / Recuerdos</option>
+            <option value="Créditos y Cuotas">Créditos y Cuotas</option>
             <option value="Otros / Emergencias">Otros / Emergencias</option>
           </select>
         </div>
@@ -406,8 +488,63 @@
     </div>
   </div>
 
+  <!-- MODAL: AGREGAR / EDITAR CRÉDITO -->
+  <div class="modal" id="modalCredito">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 id="modalCreditoTitulo" style="font-weight:700;">Registrar Crédito</h3>
+        <button onclick="cerrarModal('modalCredito')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <form id="creditoForm" onsubmit="guardarCredito(event)">
+        <input type="hidden" id="creditoId">
+        
+        <div class="form-group">
+          <label>Institución / Motivo del Crédito</label>
+          <input type="text" id="nombreCredito" required placeholder="Ej: Crédito BCI, Banco de Chile, Consumo">
+        </div>
+
+        <div class="form-group">
+          <label>Titular responsable</label>
+          <select id="titularCredito">
+            <option value="Germán">Germán</option>
+            <option value="Marcela">Marcela</option>
+            <option value="Ambos">Ambos</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Monto Total Solicitado ($)</label>
+          <input type="number" id="montoTotalCredito" required placeholder="Ej: 1000000" inputmode="numeric">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label>Cuotas Totales</label>
+            <input type="number" id="cuotasTotales" required placeholder="Ej: 12" inputmode="numeric">
+          </div>
+          <div class="form-group">
+            <label>Cuotas Pagadas</label>
+            <input type="number" id="cuotasPagadas" required placeholder="Ej: 0" inputmode="numeric" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Valor de Cada Cuota ($)</label>
+          <input type="number" id="valorCuota" required placeholder="Ej: 95000" inputmode="numeric">
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="delete-btn" id="btnBorrarCredito" onclick="eliminarCreditoActual()" style="display:none;">
+            <i data-lucide="trash-2" style="width:18px;"></i> Borrar
+          </button>
+          <button type="submit" class="submit-btn" id="btnGuardarCredito">Guardar Crédito</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- SCRIPT VERSIONADO -->
-  <script src="app.js?v=4.5"></script>
+  <script src="app.js?v=5.0"></script>
 
   <!-- SERVICE WORKER -->
   <script>
