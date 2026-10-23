@@ -1,10 +1,10 @@
-// URL de Firebase y PIN de acceso
+// Configuración
 const FIREBASE_BASE_URL = "https://gastos-522f9-default-rtdb.firebaseio.com/";
 const PIN_CORRECTO = "1610";
 
 let chartInstance = null;
 let presupuestoActual = 400000;
-let gastosCache = {};
+let movimientosCache = {};
 let ubicacionActualDetectada = "Chile";
 
 function formatCLP(val) {
@@ -17,7 +17,7 @@ function initIcons() {
   }
 }
 
-// Comprobación de PIN
+// Control de PIN
 function verificarPin() {
   const input = document.getElementById('pinInput');
   const errorMsg = document.getElementById('pinError');
@@ -47,7 +47,7 @@ function cerrarSesion() {
   }
 }
 
-// Auto-login al iniciar
+// Iniciar sesión persistente
 window.addEventListener('DOMContentLoaded', () => {
   initIcons();
   
@@ -70,7 +70,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // -------------------------------------------------------------
-// CLIMA, UBICACIÓN Y EFECTOS ANIMADOS
+// CLIMA Y ANIMACIONES
 // -------------------------------------------------------------
 async function obtenerClimaYUbicacion() {
   const badge = document.getElementById('climaTexto');
@@ -135,7 +135,6 @@ function aplicarEstiloClima(code, isDay, temp, ciudad) {
   initIcons();
 }
 
-// Generadores de partículas animadas
 function crearSol(container) {
   if (!container) return;
   const flare = document.createElement('div');
@@ -185,7 +184,7 @@ function crearEstrellas(container) {
 }
 
 // -------------------------------------------------------------
-// GESTIÓN DE DATOS EN FIREBASE
+// GESTIÓN DE DATOS EN FIREBASE (GASTOS E INGRESOS)
 // -------------------------------------------------------------
 async function cargarDatos() {
   try {
@@ -194,31 +193,39 @@ async function cargarDatos() {
     if (presData) presupuestoActual = Number(presData);
 
     const resGastos = await fetch(FIREBASE_BASE_URL + "gastos.json");
-    const gastosData = await resGastos.json();
-    gastosCache = gastosData || {};
+    const movData = await resGastos.json();
+    movimientosCache = movData || {};
 
     let totalGastado = 0;
+    let totalIngresos = 0;
     let totalEl = 0;
     let totalElla = 0;
     const categoriaTotales = {};
     const lista = [];
 
-    if (gastosData) {
-      Object.keys(gastosData).forEach(key => {
-        const g = gastosData[key];
-        const m = Number(g.monto) || 0;
-        totalGastado += m;
-        categoriaTotales[g.categoria] = (categoriaTotales[g.categoria] || 0) + m;
-        
-        if (g.pagador === 'Él') totalEl += m;
-        else if (g.pagador === 'Ella') totalElla += m;
-        else if (g.pagador === 'Ambos') { totalEl += m / 2; totalElla += m / 2; }
+    if (movData) {
+      Object.keys(movData).forEach(key => {
+        const item = movData[key];
+        const m = Number(item.monto) || 0;
+        const tipo = item.tipo || 'gasto';
 
-        lista.push({ ...g, id: key });
+        if (tipo === 'ingreso') {
+          totalIngresos += m;
+        } else {
+          totalGastado += m;
+          categoriaTotales[item.categoria] = (categoriaTotales[item.categoria] || 0) + m;
+          
+          if (item.pagador === 'Él') totalEl += m;
+          else if (item.pagador === 'Ella') totalElla += m;
+          else if (item.pagador === 'Ambos') { totalEl += m / 2; totalElla += m / 2; }
+        }
+
+        lista.push({ ...item, id: key });
       });
     }
 
-    const saldoDisponible = presupuestoActual - totalGastado;
+    // El saldo disponible toma en cuenta presupuesto + ingresos - gastos
+    const saldoDisponible = (presupuestoActual + totalIngresos) - totalGastado;
     
     const elPres = document.getElementById('presupuestoTotal');
     const elSaldo = document.getElementById('saldoDisponible');
@@ -232,16 +239,17 @@ async function cargarDatos() {
     if (elGastado) elGastado.innerText = formatCLP(totalGastado);
     if (elPagoEl) elPagoEl.innerText = formatCLP(totalEl);
     if (elPagoElla) elPagoElla.innerText = formatCLP(totalElla);
-    if (elContador) elContador.innerText = lista.length + ' gastos';
+    if (elContador) elContador.innerText = lista.length + ' movimientos';
 
-    // Barra de consumo
-    const pct = presupuestoActual > 0 ? Math.min(100, Math.round((totalGastado / presupuestoActual) * 100)) : 0;
+    // Barra de progreso considerando ingresos adicionales
+    const presupuestoEfectivo = presupuestoActual + totalIngresos;
+    const pct = presupuestoEfectivo > 0 ? Math.min(100, Math.round((totalGastado / presupuestoEfectivo) * 100)) : 0;
     const bar = document.getElementById('progressBar');
     const pctTxt = document.getElementById('porcentajeTexto');
     if (bar) bar.style.width = pct + '%';
     if (pctTxt) pctTxt.innerText = pct + '% gastado del presupuesto';
 
-    // Gráfico Dona
+    // Gráfico de categorías (solo de gastos)
     const labels = Object.keys(categoriaTotales);
     const dataValues = Object.values(categoriaTotales);
     const chartEl = document.getElementById('gastosChart');
@@ -271,20 +279,27 @@ async function cargarDatos() {
       if (lista.length === 0) {
         listaCont.innerHTML = '<div style="text-align:center; padding:15px; color:#9ca3af;">Aún no hay movimientos registrados</div>';
       } else {
-        listaCont.innerHTML = lista.map(m => `
-          <div class="movement-item" onclick="abrirModalEditar('${m.id}')">
-            <div>
-              <div class="movement-desc">${m.descripcion}</div>
-              <div class="movement-sub">
-                <span>${m.fecha || 'Hoy'}</span> • 
-                <span>${m.categoria} (${m.pagador})</span>
-                ${m.ubicacion ? ` • <span>📍 ${m.ubicacion}</span>` : ''}
+        listaCont.innerHTML = lista.map(m => {
+          const esIngreso = m.tipo === 'ingreso';
+          const signo = esIngreso ? '+' : '-';
+          const claseMonto = esIngreso ? 'movement-amount-income' : 'movement-amount-expense';
+          const labelCategoria = esIngreso ? 'Ingreso / Aporte' : m.categoria;
+
+          return `
+            <div class="movement-item" onclick="abrirModalEditar('${m.id}')">
+              <div>
+                <div class="movement-desc">${m.descripcion}</div>
+                <div class="movement-sub">
+                  <span>${m.fecha || 'Hoy'}</span> • 
+                  <span>${labelCategoria} (${m.pagador})</span>
+                  ${m.ubicacion ? ` • <span>📍 ${m.ubicacion}</span>` : ''}
+                </div>
+                <div class="tap-hint">Tocar para editar / borrar</div>
               </div>
-              <div class="tap-hint">Tocar para editar / borrar</div>
+              <div class="${claseMonto}">${signo}${formatCLP(m.monto)}</div>
             </div>
-            <div class="movement-amount">-${formatCLP(m.monto)}</div>
-          </div>
-        `).join('');
+          `;
+        }).join('');
       }
     }
     initIcons();
@@ -294,7 +309,7 @@ async function cargarDatos() {
 }
 
 async function editarPresupuesto() {
-  const nuevo = prompt("Ingresa el presupuesto total de vacaciones ($):", presupuestoActual);
+  const nuevo = prompt("Ingresa el presupuesto base de vacaciones ($):", presupuestoActual);
   if (nuevo && !isNaN(nuevo)) {
     await fetch(FIREBASE_BASE_URL + "presupuesto.json", {
       method: 'PUT',
@@ -304,13 +319,36 @@ async function editarPresupuesto() {
   }
 }
 
-function abrirModalNuevo() {
-  document.getElementById('modalTitulo').innerText = "Añadir Nuevo Gasto";
-  document.getElementById('btnGuardar').innerText = "Guardar Gasto";
-  document.getElementById('btnBorrar').style.display = "none";
+function abrirModalNuevo(tipo = 'gasto') {
   document.getElementById('gastoForm').reset();
-  document.getElementById('gastoId').value = "";
+  document.getElementById('movimientoId').value = "";
+  document.getElementById('tipoMovimiento').value = tipo;
+  document.getElementById('btnBorrar').style.display = "none";
   
+  const titulo = document.getElementById('modalTitulo');
+  const btn = document.getElementById('btnGuardar');
+  const grupoCat = document.getElementById('grupoCategoria');
+  const labelDesc = document.getElementById('labelDescripcion');
+  const labelResp = document.getElementById('labelResponsable');
+
+  if (tipo === 'ingreso') {
+    titulo.innerText = "Añadir Ingreso";
+    btn.innerText = "Guardar Ingreso";
+    btn.classList.add('income-btn');
+    grupoCat.style.display = "none";
+    labelDesc.innerText = "Motivo del ingreso";
+    document.getElementById('descripcion').placeholder = "Ej: Recarga de presupuesto / Devolución";
+    labelResp.innerText = "¿Quién aportó el dinero?";
+  } else {
+    titulo.innerText = "Añadir Nuevo Gasto";
+    btn.innerText = "Guardar Gasto";
+    btn.classList.remove('income-btn');
+    grupoCat.style.display = "block";
+    labelDesc.innerText = "Descripción";
+    document.getElementById('descripcion').placeholder = "Ej: Almuerzo costanera";
+    labelResp.innerText = "¿Quién pagó?";
+  }
+
   const hoy = new Date();
   document.getElementById('fechaGasto').value = hoy.getDate().toString().padStart(2, '0') + '/' + (hoy.getMonth() + 1).toString().padStart(2, '0');
   
@@ -322,21 +360,43 @@ function abrirModalNuevo() {
 }
 
 function abrirModalEditar(id) {
-  const item = gastosCache[id];
+  const item = movimientosCache[id];
   if (!item) return;
 
-  document.getElementById('modalTitulo').innerText = "Editar Gasto";
-  document.getElementById('btnGuardar').innerText = "Actualizar Gasto";
-  document.getElementById('btnBorrar').style.display = "flex";
-
-  document.getElementById('gastoId').value = id;
+  const tipo = item.tipo || 'gasto';
+  document.getElementById('movimientoId').value = id;
+  document.getElementById('tipoMovimiento').value = tipo;
   document.getElementById('monto').value = item.monto;
   document.getElementById('descripcion').value = item.descripcion;
-  document.getElementById('categoria').value = item.categoria;
   document.getElementById('pagador').value = item.pagador;
   document.getElementById('metodo').value = item.metodo || 'Tarjeta';
   document.getElementById('fechaGasto').value = item.fecha || '';
-  
+
+  const titulo = document.getElementById('modalTitulo');
+  const btn = document.getElementById('btnGuardar');
+  const grupoCat = document.getElementById('grupoCategoria');
+  const labelDesc = document.getElementById('labelDescripcion');
+  const labelResp = document.getElementById('labelResponsable');
+
+  if (tipo === 'ingreso') {
+    titulo.innerText = "Editar Ingreso";
+    btn.innerText = "Actualizar Ingreso";
+    btn.classList.add('income-btn');
+    grupoCat.style.display = "none";
+    labelDesc.innerText = "Motivo del ingreso";
+    labelResp.innerText = "¿Quién aportó el dinero?";
+  } else {
+    titulo.innerText = "Editar Gasto";
+    btn.innerText = "Actualizar Gasto";
+    btn.classList.remove('income-btn');
+    grupoCat.style.display = "block";
+    document.getElementById('categoria').value = item.categoria;
+    labelDesc.innerText = "Descripción";
+    labelResp.innerText = "¿Quién pagó?";
+  }
+
+  document.getElementById('btnBorrar').style.display = "flex";
+
   const ubic = item.ubicacion || 'Sin ubicación';
   document.getElementById('ubicacionGasto').value = item.ubicacion || '';
   document.getElementById('ubicacionTextoModal').innerText = `Ubicación: ${ubic}`;
@@ -350,17 +410,20 @@ function cerrarModal() {
   if (modal) modal.classList.remove('active');
 }
 
-async function guardarGasto(e) {
+async function guardarMovimiento(e) {
   e.preventDefault();
   const btn = document.getElementById('btnGuardar');
   btn.innerText = 'Guardando...';
   btn.disabled = true;
 
-  const id = document.getElementById('gastoId').value;
+  const id = document.getElementById('movimientoId').value;
+  const tipo = document.getElementById('tipoMovimiento').value;
+
   const payload = {
+    tipo: tipo,
     monto: Number(document.getElementById('monto').value),
     descripcion: document.getElementById('descripcion').value,
-    categoria: document.getElementById('categoria').value,
+    categoria: tipo === 'ingreso' ? 'Ingreso' : document.getElementById('categoria').value,
     pagador: document.getElementById('pagador').value,
     metodo: document.getElementById('metodo').value,
     fecha: document.getElementById('fechaGasto').value,
@@ -389,10 +452,10 @@ async function guardarGasto(e) {
   }
 }
 
-async function eliminarGastoActual() {
-  const id = document.getElementById('gastoId').value;
+async function eliminarMovimientoActual() {
+  const id = document.getElementById('movimientoId').value;
   if (!id) return;
-  if (confirm("¿Estás seguro de que deseas eliminar este gasto?")) {
+  if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
     await fetch(`${FIREBASE_BASE_URL}gastos/${id}.json`, {
       method: 'DELETE'
     });
