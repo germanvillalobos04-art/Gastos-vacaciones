@@ -193,13 +193,13 @@ async function cargarDatos() {
     const dataCuentas = await resCuentas.json();
     cuentasCache = dataCuentas || {};
 
-    // Cuentas iniciales si está vacío
+    // Cuentas predeterminadas con sus nombres
     if (!dataCuentas || Object.keys(dataCuentas).length === 0) {
       const cuentasDefault = {
-        c1: { nombre: "Mercado Pago", titular: "Él", saldo: 150000 },
-        c2: { nombre: "BCI Mach", titular: "Él", saldo: 80000 },
-        c3: { nombre: "BCI", titular: "Él", saldo: 90000 },
-        c4: { nombre: "Banco de Chile", titular: "Ella", saldo: 80000 }
+        c1: { nombre: "Mercado Pago", titular: "Germán", saldo: 150000 },
+        c2: { nombre: "BCI Mach", titular: "Germán", saldo: 80000 },
+        c3: { nombre: "BCI", titular: "Germán", saldo: 90000 },
+        c4: { nombre: "Banco de Chile", titular: "Marcela", saldo: 80000 }
       };
       await fetch(FIREBASE_BASE_URL + "cuentas.json", {
         method: 'PUT',
@@ -217,29 +217,30 @@ async function cargarDatos() {
     let totalGlobalDisponible = 0;
     let totalEl = 0;
     let totalElla = 0;
-    const listaCuentasEl = [];
-    const listaCuentasElla = [];
+    const listaCuentasGerman = [];
+    const listaCuentasMarcela = [];
 
     Object.keys(cuentasCache).forEach(key => {
       const c = cuentasCache[key];
       const s = Number(c.saldo) || 0;
       totalGlobalDisponible += s;
 
-      if (c.titular === 'Ella') {
+      // Compatibilidad con registros antiguos (Él / Ella) o nuevos (Germán / Marcela)
+      if (c.titular === 'Marcela' || c.titular === 'Ella') {
         totalElla += s;
-        listaCuentasElla.push({ ...c, id: key });
+        listaCuentasMarcela.push({ ...c, id: key });
       } else {
         totalEl += s;
-        listaCuentasEl.push({ ...c, id: key });
+        listaCuentasGerman.push({ ...c, id: key });
       }
     });
 
     document.getElementById('saldoDisponible').innerText = formatCLP(totalGlobalDisponible);
     document.getElementById('totalEl').innerText = formatCLP(totalEl);
     document.getElementById('totalElla').innerText = formatCLP(totalElla);
-    document.getElementById('contadorCuentas').innerText = (listaCuentasEl.length + listaCuentasElla.length) + ' cuentas';
+    document.getElementById('contadorCuentas').innerText = (listaCuentasGerman.length + listaCuentasMarcela.length) + ' cuentas';
 
-    renderizarCuentasHTML(listaCuentasEl, listaCuentasElla);
+    renderizarCuentasHTML(listaCuentasGerman, listaCuentasMarcela);
     actualizarSelectCuentas();
 
     // 3. Procesar Gastos y Categorías
@@ -325,20 +326,20 @@ async function cargarDatos() {
   }
 }
 
-function renderizarCuentasHTML(cuentasEl, cuentasElla) {
+function renderizarCuentasHTML(cuentasGerman, cuentasMarcela) {
   const cont = document.getElementById('contenedorCuentas');
   if (!cont) return;
 
   let html = '';
 
-  if (cuentasEl.length > 0) {
-    html += '<div class="accounts-section-title">Cuentas de Él</div>';
-    cuentasEl.forEach(c => {
+  if (cuentasGerman.length > 0) {
+    html += '<div class="accounts-section-title">Cuentas de Germán</div>';
+    cuentasGerman.forEach(c => {
       html += `
         <div class="account-item" onclick="abrirModalEditarCuenta('${c.id}')">
           <div>
             <div class="account-name"><i data-lucide="wallet" style="width:16px;height:16px;color:#0056b3;"></i> ${c.nombre}</div>
-            <div class="account-sub">Titular: ${c.titular}</div>
+            <div class="account-sub">Titular: Germán</div>
           </div>
           <div class="account-balance">${formatCLP(c.saldo)}</div>
         </div>
@@ -346,14 +347,14 @@ function renderizarCuentasHTML(cuentasEl, cuentasElla) {
     });
   }
 
-  if (cuentasElla.length > 0) {
-    html += '<div class="accounts-section-title" style="margin-top:14px;">Cuentas de Ella</div>';
-    cuentasElla.forEach(c => {
+  if (cuentasMarcela.length > 0) {
+    html += '<div class="accounts-section-title" style="margin-top:14px;">Cuentas de Marcela</div>';
+    cuentasMarcela.forEach(c => {
       html += `
         <div class="account-item" onclick="abrirModalEditarCuenta('${c.id}')">
           <div>
             <div class="account-name"><i data-lucide="wallet" style="width:16px;height:16px;color:#0056b3;"></i> ${c.nombre}</div>
-            <div class="account-sub">Titular: ${c.titular}</div>
+            <div class="account-sub">Titular: Marcela</div>
           </div>
           <div class="account-balance">${formatCLP(c.saldo)}</div>
         </div>
@@ -371,15 +372,16 @@ function actualizarSelectCuentas() {
   sel.innerHTML = '';
   Object.keys(cuentasCache).forEach(key => {
     const c = cuentasCache[key];
+    const titularLabel = (c.titular === 'Ella' || c.titular === 'Marcela') ? 'Marcela' : 'Germán';
     const opt = document.createElement('option');
     opt.value = key;
-    opt.text = `${c.nombre} (${c.titular}) - Saldo: ${formatCLP(c.saldo)}`;
+    opt.text = `${c.nombre} (${titularLabel}) - Saldo: ${formatCLP(c.saldo)}`;
     sel.appendChild(opt);
   });
 }
 
 // -------------------------------------------------------------
-// GESTIÓN DE CUENTAS (AGREGAR / EDITAR / BORRAR)
+// GESTIÓN DE CUENTAS
 // -------------------------------------------------------------
 function abrirModalCuenta() {
   document.getElementById('cuentaForm').reset();
@@ -396,7 +398,7 @@ function abrirModalEditarCuenta(id) {
 
   document.getElementById('cuentaId').value = id;
   document.getElementById('nombreCuenta').value = c.nombre;
-  document.getElementById('titularCuenta').value = c.titular;
+  document.getElementById('titularCuenta').value = (c.titular === 'Ella' || c.titular === 'Marcela') ? 'Marcela' : 'Germán';
   document.getElementById('saldoCuenta').value = c.saldo;
 
   document.getElementById('modalCuentaTitulo').innerText = "Editar Cuenta";
@@ -454,7 +456,7 @@ async function eliminarCuentaActual() {
 }
 
 // -------------------------------------------------------------
-// GESTIÓN DE MOVIMIENTOS (GASTOS E INGRESOS VINCULADOS A CUENTAS)
+// GESTIÓN DE MOVIMIENTOS
 // -------------------------------------------------------------
 function abrirModalNuevo(tipo = 'gasto') {
   document.getElementById('gastoForm').reset();
@@ -476,7 +478,7 @@ function abrirModalNuevo(tipo = 'gasto') {
     btn.classList.add('income-btn');
     grupoCat.style.display = "none";
     labelDesc.innerText = "Motivo del ingreso";
-    document.getElementById('descripcion').placeholder = "Ej: Depósito / Sueldo / Transferencia";
+    document.getElementById('descripcion').placeholder = "Ej: Sueldo, depósito o transferencia";
     labelCuenta.innerText = "¿A qué cuenta entra el dinero?";
   } else {
     titulo.innerText = "Añadir Nuevo Gasto";
@@ -583,7 +585,7 @@ async function guardarMovimiento(e) {
   };
 
   try {
-    // 1. Revertir saldo de cuenta previa si era edición
+    // Revertir saldo anterior si es edición
     if (id && cuentaPreviaId && cuentasCache[cuentaPreviaId]) {
       const prevAccount = cuentasCache[cuentaPreviaId];
       const ajuste = tipo === 'gasto' ? montoPrevio : -montoPrevio;
@@ -594,7 +596,7 @@ async function guardarMovimiento(e) {
       });
     }
 
-    // 2. Aplicar nuevo descuento/ingreso en la cuenta seleccionada
+    // Aplicar saldo a la cuenta seleccionada
     if (cuentaObj) {
       const delta = tipo === 'gasto' ? -montoNuevo : montoNuevo;
       cuentaObj.saldo = Number(cuentaObj.saldo) + delta;
@@ -604,7 +606,7 @@ async function guardarMovimiento(e) {
       });
     }
 
-    // 3. Guardar el movimiento
+    // Guardar el registro
     if (id) {
       await fetch(`${FIREBASE_BASE_URL}gastos/${id}.json`, {
         method: 'PUT',
@@ -633,7 +635,6 @@ async function eliminarMovimientoActual() {
   if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
     const item = movimientosCache[id];
     if (item && item.cuentaId && cuentasCache[item.cuentaId]) {
-      // Revertir el dinero a la cuenta bancaria
       const acc = cuentasCache[item.cuentaId];
       const ajuste = item.tipo === 'gasto' ? Number(item.monto) : -Number(item.monto);
       acc.saldo = Number(acc.saldo) + ajuste;
