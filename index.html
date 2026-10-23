@@ -52,7 +52,7 @@
       background: #007bff; color: white; border: none; padding: 14px 36px; font-weight: 700; border-radius: 14px; font-size: 1rem; cursor: pointer;
     }
 
-    /* Cabecera con contenedor de animaciones */
+    /* Cabecera con animaciones */
     .header {
       position: relative;
       background: linear-gradient(180deg, #002244 0%, #004b99 100%);
@@ -66,12 +66,10 @@
     .theme-rainy { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important; }
     .theme-night { background: linear-gradient(180deg, #090d16 0%, #1e1b4b 100%) !important; }
 
-    /* Capa de efectos climáticos */
     .weather-animation-layer {
       position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1;
     }
 
-    /* Animación: Soleado */
     .sun-flare {
       position: absolute; top: -50px; right: -50px; width: 200px; height: 200px;
       background: radial-gradient(circle, rgba(255,230,109,0.4) 0%, rgba(255,255,255,0) 70%);
@@ -79,7 +77,6 @@
     }
     @keyframes pulseSun { from { transform: scale(0.9); opacity: 0.6; } to { transform: scale(1.2); opacity: 1; } }
 
-    /* Animación: Lluvia */
     .rain-drop {
       position: absolute; background: rgba(255, 255, 255, 0.4);
       width: 1.5px; height: 16px; transform: rotate(15deg);
@@ -90,7 +87,6 @@
       to { transform: translateY(350px) rotate(15deg); }
     }
 
-    /* Animación: Nubes */
     .cloud-shape {
       position: absolute; background: rgba(255, 255, 255, 0.12);
       border-radius: 50px; filter: blur(4px);
@@ -101,14 +97,12 @@
       to { transform: translateX(450px); }
     }
 
-    /* Animación: Estrellas (Noche) */
     .star {
       position: absolute; background: white; border-radius: 50%;
       animation: twinkle 2s infinite ease-in-out;
     }
     @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 0.9; transform: scale(1.3); } }
 
-    /* Contenido de la cabecera por encima del clima */
     .header-content { position: relative; z-index: 2; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .header-top h1 { font-size: 1.25rem; font-weight: 700; }
@@ -129,16 +123,23 @@
     .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.25); border-radius: 10px; overflow: hidden; margin-top: 10px; }
     .progress-bar-fill { height: 100%; background: #48cae4; border-radius: 10px; transition: width 0.4s ease; }
 
+    /* Acciones Rápidas (3 Botones centrados) */
     .quick-actions {
-      display: flex; justify-content: space-around; margin: -42px 16px 20px 16px;
-      background: white; padding: 16px 10px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin: -42px 16px 20px 16px;
+      background: white; padding: 14px 10px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
       position: relative; z-index: 3;
     }
     .action-btn {
       display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; font-size: 0.75rem; font-weight: 600; color: #0b4f9c; cursor: pointer;
     }
     .action-icon {
-      width: 48px; height: 48px; background: #eaf2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0056b3;
+      width: 46px; height: 46px; background: #eaf2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0056b3;
+    }
+    .action-icon.income {
+      background: #e6f7f4; color: #10b981;
     }
 
     .card { background: white; margin: 16px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
@@ -160,7 +161,8 @@
     .movement-item:active { background: #f8fafc; }
     .movement-desc { font-weight: 600; font-size: 0.95rem; }
     .movement-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 5px; }
-    .movement-amount { font-weight: 700; color: var(--danger); font-size: 1rem; text-align: right; }
+    .movement-amount-expense { font-weight: 700; color: var(--danger); font-size: 1rem; text-align: right; }
+    .movement-amount-income { font-weight: 700; color: var(--success); font-size: 1rem; text-align: right; }
     .tap-hint { font-size: 0.68rem; color: #3b82f6; margin-top: 2px; }
 
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; align-items: flex-end; }
@@ -174,6 +176,7 @@
     
     .btn-group { display: flex; gap: 10px; margin-top: 15px; }
     .submit-btn { flex: 1; background: #0056b3; color: white; border: none; padding: 14px; border-radius: 14px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    .submit-btn.income-btn { background: #10b981 !important; }
     .delete-btn { background: #fee2e2; color: #dc2626; border: none; padding: 14px 18px; border-radius: 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
   </style>
 </head>
@@ -192,8 +195,6 @@
   <!-- DASHBOARD PRINCIPAL -->
   <div id="appContainer" style="display: none;">
     <div class="header" id="headerClima">
-      
-      <!-- CAPA DE ANIMACIONES DEL CLIMA -->
       <div class="weather-animation-layer" id="weatherAnimationLayer"></div>
 
       <div class="header-content">
@@ -213,23 +214,27 @@
           <div class="balance-amount" id="saldoDisponible">$0</div>
           
           <div style="font-size: 0.85rem; opacity: 0.9; display: flex; justify-content: space-between; align-items: center;">
-            <span>Presupuesto: <strong id="presupuestoTotal">$0</strong></span>
-            <span style="text-decoration: underline; cursor: pointer; font-size: 0.8rem;" onclick="editarPresupuesto()">Editar monto</span>
+            <span>Presupuesto base: <strong id="presupuestoTotal">$0</strong></span>
+            <span style="text-decoration: underline; cursor: pointer; font-size: 0.8rem;" onclick="editarPresupuesto()">Editar base</span>
           </div>
           
           <div class="progress-bar-bg">
             <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
           </div>
-          <div style="font-size: 0.72rem; opacity: 0.8; margin-top: 6px; text-align: right;" id="porcentajeTexto">0% gastado del presupuesto</div>
+          <div style="font-size: 0.72rem; opacity: 0.8; margin-top: 6px; text-align: right;" id="porcentajeTexto">0% gastado</div>
         </div>
       </div>
     </div>
 
-    <!-- ACCIONES RÁPIDAS -->
+    <!-- ACCIONES RÁPIDAS (Gasto, Ingreso, Actualizar) -->
     <div class="quick-actions">
-      <button class="action-btn" onclick="abrirModalNuevo()">
-        <div class="action-icon"><i data-lucide="plus-circle"></i></div>
+      <button class="action-btn" onclick="abrirModalNuevo('gasto')">
+        <div class="action-icon"><i data-lucide="minus-circle"></i></div>
         Gasto
+      </button>
+      <button class="action-btn" onclick="abrirModalNuevo('ingreso')">
+        <div class="action-icon income"><i data-lucide="plus-circle"></i></div>
+        Ingreso
       </button>
       <button class="action-btn" onclick="cargarDatos()">
         <div class="action-icon"><i data-lucide="refresh-cw"></i></div>
@@ -270,35 +275,36 @@
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
         <div class="card-title" style="margin-bottom:0;">Movimientos</div>
-        <span style="font-size:0.75rem; color:#6b7280;" id="contadorMovimientos">0 gastos</span>
+        <span style="font-size:0.75rem; color:#6b7280;" id="contadorMovimientos">0 movimientos</span>
       </div>
-      <div class="card-subtitle">Toca cualquier gasto para editarlo o borrarlo</div>
+      <div class="card-subtitle">Toca cualquier movimiento para editarlo o borrarlo</div>
       <div id="listaMovimientos">
         <div style="text-align:center; padding: 20px; color: #9ca3af;">Cargando movimientos...</div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL EDITAR / AGREGAR GASTO -->
+  <!-- MODAL EDITAR / AGREGAR (GASTO O INGRESO) -->
   <div class="modal" id="modalGasto">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-        <h3 id="modalTitulo" style="font-weight:700;">Añadir Nuevo Gasto</h3>
+        <h3 id="modalTitulo" style="font-weight:700;">Añadir Movimiento</h3>
         <button onclick="cerrarModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
       </div>
-      <form id="gastoForm" onsubmit="guardarGasto(event)">
-        <input type="hidden" id="gastoId">
+      <form id="gastoForm" onsubmit="guardarMovimiento(event)">
+        <input type="hidden" id="movimientoId">
+        <input type="hidden" id="tipoMovimiento" value="gasto">
         <input type="hidden" id="ubicacionGasto">
         
         <div class="form-group">
-          <label>Monto ($)</label>
+          <label id="labelMonto">Monto ($)</label>
           <input type="number" id="monto" required placeholder="Ej: 15000" inputmode="numeric">
         </div>
         <div class="form-group">
-          <label>Descripción</label>
+          <label id="labelDescripcion">Descripción</label>
           <input type="text" id="descripcion" required placeholder="Ej: Almuerzo costanera">
         </div>
-        <div class="form-group">
+        <div class="form-group" id="grupoCategoria">
           <label>Categoría</label>
           <select id="categoria">
             <option value="Comida y Bebida">Comida y Bebida</option>
@@ -310,7 +316,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>¿Quién pagó?</label>
+          <label id="labelResponsable">¿Quién pagó / aportó?</label>
           <select id="pagador">
             <option value="Él">Él</option>
             <option value="Ella">Ella</option>
@@ -318,9 +324,9 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Medio de Pago</label>
+          <label>Medio</label>
           <select id="metodo">
-            <option value="Tarjeta">Tarjeta</option>
+            <option value="Tarjeta">Tarjeta / Transferencia</option>
             <option value="Efectivo">Efectivo</option>
           </select>
         </div>
@@ -335,17 +341,17 @@
         </div>
 
         <div class="btn-group">
-          <button type="button" class="delete-btn" id="btnBorrar" onclick="eliminarGastoActual()" style="display:none;">
+          <button type="button" class="delete-btn" id="btnBorrar" onclick="eliminarMovimientoActual()" style="display:none;">
             <i data-lucide="trash-2" style="width:18px;"></i> Borrar
           </button>
-          <button type="submit" class="submit-btn" id="btnGuardar">Guardar Gasto</button>
+          <button type="submit" class="submit-btn" id="btnGuardar">Guardar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- SCRIPT CON VERSIÓN INCREMENTADA PARA EL CACHÉ -->
-  <script src="app.js?v=2.5"></script>
+  <!-- SCRIPT EXTERNO VERSIONADO -->
+  <script src="app.js?v=3.0"></script>
 
   <!-- SERVICE WORKER -->
   <script>
