@@ -6,6 +6,7 @@ let chartInstance = null;
 let cuentasCache = {};
 let movimientosCache = {};
 let creditosCache = {};
+let tarjetasCreditoCache = {};
 let ubicacionActualDetectada = "Chile";
 
 function formatCLP(val) {
@@ -18,7 +19,7 @@ function initIcons() {
   }
 }
 
-// Navegación entre pestañas
+// Navegación entre pestañas permanentes
 function cambiarPestana(tab) {
   const tabInicio = document.getElementById('tabInicio');
   const tabCreditos = document.getElementById('tabCreditos');
@@ -207,11 +208,11 @@ function crearEstrellas(container) {
 }
 
 // -------------------------------------------------------------
-// GESTIÓN DE DATOS EN FIREBASE (CUENTAS, GASTOS Y CRÉDITOS)
+// GESTIÓN Y CARGA DE DATOS EN FIREBASE
 // -------------------------------------------------------------
 async function cargarDatos() {
   try {
-    // 1. Cargar Cuentas Bancarias
+    // 1. Cuentas de Débito/Efectivo
     const resCuentas = await fetch(FIREBASE_BASE_URL + "cuentas.json");
     const dataCuentas = await resCuentas.json();
     cuentasCache = dataCuentas || {};
@@ -220,8 +221,8 @@ async function cargarDatos() {
       const cuentasDefault = {
         c1: { nombre: "Mercado Pago", titular: "Germán", saldo: 150000 },
         c2: { nombre: "BCI Mach", titular: "Germán", saldo: 80000 },
-        c3: { nombre: "BCI", titular: "Germán", saldo: 90000 },
-        c4: { nombre: "Banco de Chile", titular: "Marcela", saldo: 80000 }
+        c3: { nombre: "BCI", titular: "Germán", saldo: 94413 },
+        c4: { nombre: "Banco de Chile", titular: "Marcela", saldo: 0 }
       };
       await fetch(FIREBASE_BASE_URL + "cuentas.json", {
         method: 'PUT',
@@ -230,17 +231,22 @@ async function cargarDatos() {
       cuentasCache = cuentasDefault;
     }
 
-    // 2. Cargar Movimientos
+    // 2. Tarjetas y Cuentas de Crédito
+    const resTarjetas = await fetch(FIREBASE_BASE_URL + "tarjetas_credito.json");
+    const dataTarjetas = await resTarjetas.json();
+    tarjetasCreditoCache = dataTarjetas || {};
+
+    // 3. Créditos en Cuotas
+    const resCreditos = await fetch(FIREBASE_BASE_URL + "creditos.json");
+    const dataCreditos = await resCreditos.json();
+    creditosCache = dataCreditos || {};
+
+    // 4. Movimientos
     const resGastos = await fetch(FIREBASE_BASE_URL + "gastos.json");
     const movData = await resGastos.json();
     movimientosCache = movData || {};
 
-    // 3. Cargar Créditos
-    const resCreditos = await fetch(FIREBASE_BASE_URL + "creditos.json");
-    const creditosData = await resCreditos.json();
-    creditosCache = creditosData || {};
-
-    // Renderizar Cuentas y calcular total
+    // --- Procesar Cuentas de Inicio (Débito/Efectivo) ---
     let totalGlobalDisponible = 0;
     let totalEl = 0;
     let totalElla = 0;
@@ -265,17 +271,46 @@ async function cargarDatos() {
     document.getElementById('totalEl').innerText = formatCLP(totalEl);
     document.getElementById('totalElla').innerText = formatCLP(totalElla);
     
-    const numCuentas = listaCuentasGerman.length + listaCuentasMarcela.length;
-    const contadorSec = document.getElementById('contadorCuentasSec');
-    if (contadorSec) contadorSec.innerText = numCuentas + ' cuentas';
+    const contCuentas = document.getElementById('contadorCuentas');
+    if (contCuentas) contCuentas.innerText = (listaCuentasGerman.length + listaCuentasMarcela.length) + ' cuentas';
 
-    renderizarCuentasHTML(listaCuentasGerman, listaCuentasMarcela);
+    renderizarCuentasInicioHTML(listaCuentasGerman, listaCuentasMarcela);
     actualizarSelectCuentas();
 
-    // 4. Renderizar Créditos
+    // --- Procesar Cuentas de Crédito (Pantalla Créditos) ---
+    let totalCupoDisponible = 0;
+    let cupoEl = 0;
+    let cupoElla = 0;
+    const listaTarjetasGerman = [];
+    const listaTarjetasMarcela = [];
+
+    Object.keys(tarjetasCreditoCache).forEach(key => {
+      const tc = tarjetasCreditoCache[key];
+      const disp = Number(tc.cupoDisponible) || 0;
+      totalCupoDisponible += disp;
+
+      if (tc.titular === 'Marcela') {
+        cupoElla += disp;
+        listaTarjetasMarcela.push({ ...tc, id: key });
+      } else {
+        cupoEl += disp;
+        listaTarjetasGerman.push({ ...tc, id: key });
+      }
+    });
+
+    document.getElementById('cupoTotalDisponible').innerText = formatCLP(totalCupoDisponible);
+    document.getElementById('cupoGerman').innerText = formatCLP(cupoEl);
+    document.getElementById('cupoMarcela').innerText = formatCLP(cupoElla);
+
+    const contTarjetas = document.getElementById('contadorTarjetasCredito');
+    if (contTarjetas) contTarjetas.innerText = (listaTarjetasGerman.length + listaTarjetasMarcela.length) + ' tarjetas';
+
+    renderizarTarjetasCreditoHTML(listaTarjetasGerman, listaTarjetasMarcela);
+
+    // --- Procesar Créditos en Cuotas ---
     renderizarCreditosHTML();
 
-    // 5. Procesar Gastos y Categorías
+    // --- Procesar Gastos y Categorías ---
     let totalGastado = 0;
     const categoriaTotales = {};
     const listaMovimientos = [];
@@ -358,9 +393,15 @@ async function cargarDatos() {
   }
 }
 
-function renderizarCuentasHTML(cuentasGerman, cuentasMarcela) {
-  const cont = document.getElementById('contenedorCuentasSec');
+// Render Cuentas en Pantalla de Inicio
+function renderizarCuentasInicioHTML(cuentasGerman, cuentasMarcela) {
+  const cont = document.getElementById('contenedorCuentas');
   if (!cont) return;
+
+  if (cuentasGerman.length === 0 && cuentasMarcela.length === 0) {
+    cont.innerHTML = '<div style="text-align:center; padding: 15px; color: #9ca3af;">No hay cuentas agregadas</div>';
+    return;
+  }
 
   let html = '';
 
@@ -397,16 +438,74 @@ function renderizarCuentasHTML(cuentasGerman, cuentasMarcela) {
   cont.innerHTML = html;
 }
 
+// Render Cuentas y Tarjetas de Crédito
+function renderizarTarjetasCreditoHTML(tarjetasGerman, tarjetasMarcela) {
+  const cont = document.getElementById('contenedorCuentasCredito');
+  if (!cont) return;
+
+  if (tarjetasGerman.length === 0 && tarjetasMarcela.length === 0) {
+    cont.innerHTML = '<div style="text-align:center; padding: 15px; color: #9ca3af;">No hay tarjetas de crédito registradas</div>';
+    return;
+  }
+
+  let html = '';
+
+  if (tarjetasGerman.length > 0) {
+    html += '<div class="accounts-section-title">Tarjetas de Germán</div>';
+    tarjetasGerman.forEach(tc => {
+      const utilizado = Number(tc.cupoTotal) - Number(tc.cupoDisponible);
+      html += `
+        <div class="account-item" onclick="abrirModalEditarCuentaCredito('${tc.id}')">
+          <div>
+            <div class="account-name"><i data-lucide="credit-card" style="width:16px;height:16px;color:#0056b3;"></i> ${tc.nombre}</div>
+            <div class="account-sub">Cupo Total: ${formatCLP(tc.cupoTotal)} • Utilizado: ${formatCLP(utilizado)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="account-balance">${formatCLP(tc.cupoDisponible)}</div>
+            <div style="font-size:0.68rem; color:#10b981; font-weight:600;">Disponible</div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  if (tarjetasMarcela.length > 0) {
+    html += '<div class="accounts-section-title" style="margin-top:14px;">Tarjetas de Marcela</div>';
+    tarjetasMarcela.forEach(tc => {
+      const utilizado = Number(tc.cupoTotal) - Number(tc.cupoDisponible);
+      html += `
+        <div class="account-item" onclick="abrirModalEditarCuentaCredito('${tc.id}')">
+          <div>
+            <div class="account-name"><i data-lucide="credit-card" style="width:16px;height:16px;color:#0056b3;"></i> ${tc.nombre}</div>
+            <div class="account-sub">Cupo Total: ${formatCLP(tc.cupoTotal)} • Utilizado: ${formatCLP(utilizado)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="account-balance">${formatCLP(tc.cupoDisponible)}</div>
+            <div style="font-size:0.68rem; color:#10b981; font-weight:600;">Disponible</div>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  cont.innerHTML = html;
+}
+
+// Render Créditos en Cuotas
 function renderizarCreditosHTML() {
   const cont = document.getElementById('contenedorCreditos');
   const contador = document.getElementById('contadorCreditos');
+  const totalDeudaEl = document.getElementById('totalDeudaCreditos');
   if (!cont) return;
 
   const ids = Object.keys(creditosCache);
   if (contador) contador.innerText = ids.length + ' activos';
 
+  let deudaAcumulada = 0;
+
   if (ids.length === 0) {
     cont.innerHTML = '<div style="text-align:center; padding: 15px; color: #9ca3af;">No hay créditos registrados aún</div>';
+    if (totalDeudaEl) totalDeudaEl.innerText = "$0";
     return;
   }
 
@@ -418,6 +517,7 @@ function renderizarCreditosHTML() {
     const valorCuota = Number(cr.valorCuota) || 0;
     const restantes = Math.max(0, totalCuotas - pagadas);
     const deudaRestante = restantes * valorCuota;
+    deudaAcumulada += deudaRestante;
     const pct = Math.min(100, Math.round((pagadas / totalCuotas) * 100));
 
     html += `
@@ -453,7 +553,7 @@ function renderizarCreditosHTML() {
             </button>
           ` : `
             <div style="flex:1; text-align:center; padding:8px; font-weight:700; color:#10b981; font-size:0.85rem;">
-              ✅ Crédito Totalmente Pagado
+              ✅ Crédito Pagado
             </div>
           `}
           <button class="edit-credit-btn" onclick="abrirModalEditarCredito('${key}')">Editar</button>
@@ -462,6 +562,7 @@ function renderizarCreditosHTML() {
     `;
   });
 
+  if (totalDeudaEl) totalDeudaEl.innerText = formatCLP(deudaAcumulada);
   cont.innerHTML = html;
 }
 
@@ -470,6 +571,7 @@ function actualizarSelectCuentas() {
   if (!sel) return;
 
   sel.innerHTML = '';
+  // Agregar cuentas de débito
   Object.keys(cuentasCache).forEach(key => {
     const c = cuentasCache[key];
     const titularLabel = (c.titular === 'Ella' || c.titular === 'Marcela') ? 'Marcela' : 'Germán';
@@ -481,7 +583,7 @@ function actualizarSelectCuentas() {
 }
 
 // -------------------------------------------------------------
-// GESTIÓN DE CUENTAS BANCARIAS
+// GESTIÓN DE CUENTAS BANCARIAS (DÉBITO / EFECTIVO)
 // -------------------------------------------------------------
 function abrirModalCuenta() {
   document.getElementById('cuentaForm').reset();
@@ -556,7 +658,84 @@ async function eliminarCuentaActual() {
 }
 
 // -------------------------------------------------------------
-// GESTIÓN DE CRÉDITOS Y PAGO DE CUOTAS
+// GESTIÓN DE TARJETAS Y CUENTAS DE CRÉDITO
+// -------------------------------------------------------------
+function abrirModalCuentaCredito() {
+  document.getElementById('cuentaCreditoForm').reset();
+  document.getElementById('cuentaCreditoId').value = "";
+  document.getElementById('modalCuentaCreditoTitulo').innerText = "Agregar Tarjeta de Crédito";
+  document.getElementById('btnGuardarTarjetaCredito').innerText = "Guardar Tarjeta";
+  document.getElementById('btnBorrarTarjetaCredito').style.display = "none";
+  document.getElementById('modalCuentaCredito').classList.add('active');
+}
+
+function abrirModalEditarCuentaCredito(id) {
+  const tc = tarjetasCreditoCache[id];
+  if (!tc) return;
+
+  document.getElementById('cuentaCreditoId').value = id;
+  document.getElementById('nombreTarjetaCredito').value = tc.nombre;
+  document.getElementById('titularTarjetaCredito').value = tc.titular;
+  document.getElementById('cupoTotalTarjeta').value = tc.cupoTotal;
+  document.getElementById('cupoDisponibleTarjeta').value = tc.cupoDisponible;
+
+  document.getElementById('modalCuentaCreditoTitulo').innerText = "Editar Tarjeta";
+  document.getElementById('btnGuardarTarjetaCredito').innerText = "Actualizar Tarjeta";
+  document.getElementById('btnBorrarTarjetaCredito').style.display = "flex";
+  document.getElementById('modalCuentaCredito').classList.add('active');
+  initIcons();
+}
+
+async function guardarCuentaCredito(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnGuardarTarjetaCredito');
+  btn.innerText = 'Guardando...';
+  btn.disabled = true;
+
+  const id = document.getElementById('cuentaCreditoId').value;
+  const payload = {
+    nombre: document.getElementById('nombreTarjetaCredito').value,
+    titular: document.getElementById('titularTarjetaCredito').value,
+    cupoTotal: Number(document.getElementById('cupoTotalTarjeta').value),
+    cupoDisponible: Number(document.getElementById('cupoDisponibleTarjeta').value)
+  };
+
+  try {
+    if (id) {
+      await fetch(`${FIREBASE_BASE_URL}tarjetas_credito/${id}.json`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+    } else {
+      await fetch(FIREBASE_BASE_URL + "tarjetas_credito.json", {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    }
+    btn.innerText = 'Guardado';
+    btn.disabled = false;
+    cerrarModal('modalCuentaCredito');
+    cargarDatos();
+  } catch (err) {
+    btn.innerText = 'Error al guardar';
+    btn.disabled = false;
+  }
+}
+
+async function eliminarCuentaCreditoActual() {
+  const id = document.getElementById('cuentaCreditoId').value;
+  if (!id) return;
+  if (confirm("¿Estás seguro de que deseas eliminar esta tarjeta de crédito?")) {
+    await fetch(`${FIREBASE_BASE_URL}tarjetas_credito/${id}.json`, {
+      method: 'DELETE'
+    });
+    cerrarModal('modalCuentaCredito');
+    cargarDatos();
+  }
+}
+
+// -------------------------------------------------------------
+// GESTIÓN DE CRÉDITOS EN CUOTAS
 // -------------------------------------------------------------
 function abrirModalCredito() {
   document.getElementById('creditoForm').reset();
@@ -636,18 +815,16 @@ async function eliminarCreditoActual() {
   }
 }
 
-// Pagar una cuota de crédito directamente y descontar de una cuenta bancaria
 async function pagarCuotaCredito(creditoId) {
   const cr = creditosCache[creditoId];
   if (!cr) return;
 
   const cuentasKeys = Object.keys(cuentasCache);
   if (cuentasKeys.length === 0) {
-    alert("No tienes cuentas registradas para descontar la cuota.");
+    alert("No tienes cuentas de débito registradas para pagar la cuota.");
     return;
   }
 
-  // Crear listado para elegir cuenta
   let mensajeCuentas = "Selecciona el número de la cuenta desde donde se pagará la cuota:\n";
   cuentasKeys.forEach((k, idx) => {
     mensajeCuentas += `${idx + 1}. ${cuentasCache[k].nombre} (${cuentasCache[k].titular}) - Saldo: ${formatCLP(cuentasCache[k].saldo)}\n`;
@@ -659,7 +836,7 @@ async function pagarCuotaCredito(creditoId) {
   const idxCuenta = parseInt(seleccion) - 1;
   const cuentaKey = cuentasKeys[idxCuenta];
   if (!cuentaKey || !cuentasCache[cuentaKey]) {
-    alert("Opción de cuenta inválida.");
+    alert("Opción inválida.");
     return;
   }
 
@@ -667,21 +844,18 @@ async function pagarCuotaCredito(creditoId) {
   const valorCuota = Number(cr.valorCuota);
   const nuevaCuotaPagada = Number(cr.cuotasPagadas) + 1;
 
-  // 1. Descontar saldo de la cuenta bancaria
   cuentaSeleccionada.saldo = Number(cuentaSeleccionada.saldo) - valorCuota;
   await fetch(`${FIREBASE_BASE_URL}cuentas/${cuentaKey}.json`, {
     method: 'PUT',
     body: JSON.stringify(cuentaSeleccionada)
   });
 
-  // 2. Incrementar cuota en el crédito
   cr.cuotasPagadas = nuevaCuotaPagada;
   await fetch(`${FIREBASE_BASE_URL}creditos/${creditoId}.json`, {
     method: 'PUT',
     body: JSON.stringify(cr)
   });
 
-  // 3. Registrar el gasto en el historial de movimientos
   const hoy = new Date();
   const fechaStr = hoy.getDate().toString().padStart(2, '0') + '/' + (hoy.getMonth() + 1).toString().padStart(2, '0');
 
@@ -703,7 +877,7 @@ async function pagarCuotaCredito(creditoId) {
     body: JSON.stringify(gastoMov)
   });
 
-  alert(`¡Cuota ${nuevaCuotaPagada}/${cr.cuotasTotales} pagada con éxito descontada de ${cuentaSeleccionada.nombre}!`);
+  alert(`¡Cuota ${nuevaCuotaPagada}/${cr.cuotasTotales} pagada! Se descontaron ${formatCLP(valorCuota)} de ${cuentaSeleccionada.nombre}`);
   cargarDatos();
 }
 
