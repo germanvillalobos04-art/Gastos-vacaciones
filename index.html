@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gastos y Finanzas</title>
+  <title>Gastos y Créditos</title>
 
   <!-- Control de Caché -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -41,7 +41,7 @@
 
     /* Pantalla PIN */
     #pinScreen {
-      position: fixed; inset: 0; background: #002244; z-index: 9999;
+      position: fixed; inset: 0; background: #002244; z-index: 99999;
       display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; padding: 20px;
     }
     .pin-input {
@@ -52,11 +52,11 @@
       background: #007bff; color: white; border: none; padding: 14px 36px; font-weight: 700; border-radius: 14px; font-size: 1rem; cursor: pointer;
     }
 
-    /* Cabecera */
+    /* Cabeceras */
     .header {
       position: relative;
       background: linear-gradient(180deg, #002244 0%, #004b99 100%);
-      color: white; padding: 32px 20px 75px 20px; border-radius: 0 0 28px 28px;
+      color: white; padding: 32px 20px 45px 20px; border-radius: 0 0 28px 28px;
       overflow: hidden;
       transition: background 0.8s ease;
     }
@@ -118,36 +118,17 @@
       background: rgba(255, 255, 255, 0.12); backdrop-filter: blur(10px);
       border-radius: 20px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.18);
     }
-    .balance-title { font-size: 0.85rem; opacity: 0.85; margin-bottom: 6px; }
-    .balance-amount { font-size: 2.3rem; font-weight: 800; margin-bottom: 8px; }
+    .balance-title { font-size: 0.82rem; opacity: 0.85; margin-bottom: 6px; }
+    .balance-amount { font-size: 2.2rem; font-weight: 800; margin-bottom: 8px; }
 
-    /* Acciones Rápidas */
-    .quick-actions {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin: -42px 16px 20px 16px;
-      background: white; padding: 14px 10px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-      position: relative;
-      z-index: 20 !important;
-    }
-    .action-btn {
-      display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; font-size: 0.75rem; font-weight: 600; color: #0b4f9c; cursor: pointer;
-      user-select: none;
-    }
-    .action-icon {
-      width: 46px; height: 46px; background: #eaf2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0056b3;
-      pointer-events: none;
-    }
-    .action-icon.income { background: #e6f7f4; color: #10b981; }
-
+    /* Tarjetas de contenido */
     .card { background: white; margin: 16px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); position: relative; z-index: 10; }
     .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
     .card-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; }
 
     /* Cuentas */
     .accounts-section-title {
-      font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #6b7280; margin: 12px 0 6px 0; letter-spacing: 0.5px;
+      font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: #6b7280; margin: 12px 0 6px 0; letter-spacing: 0.5px;
     }
     .account-item {
       display: flex; justify-content: space-between; align-items: center;
@@ -204,23 +185,23 @@
     .movement-amount-income { font-weight: 700; color: var(--success); font-size: 1rem; text-align: right; }
     .tap-hint { font-size: 0.68rem; color: #3b82f6; margin-top: 2px; }
 
-    /* Barra de Navegación Inferior Fija */
+    /* Barra de Navegación Inferior Permanente */
     .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0; height: 68px;
+      position: fixed; bottom: 0; left: 0; right: 0; height: 72px;
       background: white; border-top: 1px solid #e2e8f0; display: flex;
-      justify-content: space-around; align-items: center; z-index: 1000;
-      box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+      justify-content: space-around; align-items: center; z-index: 9999;
+      box-shadow: 0 -4px 18px rgba(0,0,0,0.06);
     }
     .nav-tab {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      background: none; border: none; color: #94a3b8; font-size: 0.75rem; font-weight: 600;
-      cursor: pointer; width: 50%; padding: 8px 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      background: none; border: none; color: #64748b; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; flex: 1; height: 100%;
     }
-    .nav-tab.active { color: #0056b3; }
+    .nav-tab.active { color: #0056b3; font-weight: 700; }
     .nav-tab i { width: 22px; height: 22px; }
 
     /* Modales */
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 10000; align-items: flex-end; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100000; align-items: flex-end; }
     .modal.active { display: flex; }
     .modal-content { background: white; width: 100%; border-radius: 26px 26px 0 0; padding: 24px; max-height: 88vh; overflow-y: auto; animation: slideUp 0.2s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -250,7 +231,7 @@
   <!-- DASHBOARD PRINCIPAL -->
   <div id="appContainer" style="display: none;">
     
-    <!-- ================= PESTAÑA 1: INICIO (GASTOS Y MOVIMIENTOS) ================= -->
+    <!-- ================= 1. PESTAÑA INICIO ================= -->
     <div id="tabInicio" class="tab-view">
       <div class="header" id="headerClima">
         <div class="weather-animation-layer" id="weatherAnimationLayer"></div>
@@ -268,7 +249,7 @@
           </div>
           
           <div class="balance-card">
-            <div class="balance-title">Dinero disponible (ambos)</div>
+            <div class="balance-title">Dinero disponible (Débito y Efectivo)</div>
             <div class="balance-amount" id="saldoDisponible">$0</div>
             <div style="font-size: 0.85rem; opacity: 0.95; display: flex; justify-content: space-between; margin-top: 4px;">
               <span>Germán: <strong id="totalEl">$0</strong></span>
@@ -278,19 +259,20 @@
         </div>
       </div>
 
-      <!-- ACCIONES RÁPIDAS -->
-      <div class="quick-actions">
-        <button class="action-btn" onclick="abrirModalNuevo('gasto')">
-          <div class="action-icon"><i data-lucide="minus-circle"></i></div>
-          Gasto
-        </button>
-        <button class="action-btn" onclick="abrirModalNuevo('ingreso')">
-          <div class="action-icon income"><i data-lucide="plus-circle"></i></div>
-          Ingreso
-        </button>
-        <button class="action-btn" onclick="cargarDatos()">
-          <div class="action-icon"><i data-lucide="refresh-cw"></i></div>
-          Actualizar
+      <!-- SECCIÓN CUENTAS BANCARIAS EN INICIO -->
+      <div class="card" style="margin-top: 16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div class="card-title" style="margin-bottom:0;">Cuentas y Saldos</div>
+          <span style="font-size:0.75rem; color:#6b7280;" id="contadorCuentas">0 cuentas</span>
+        </div>
+        <div class="card-subtitle">Toca cualquier cuenta para editar su saldo</div>
+        
+        <div id="contenedorCuentas">
+          <div style="text-align:center; padding: 15px; color: #9ca3af;">Cargando cuentas...</div>
+        </div>
+
+        <button class="add-btn-dashed" onclick="abrirModalCuenta()">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Agregar Cuenta Bancaria
         </button>
       </div>
 
@@ -320,42 +302,58 @@
       </div>
     </div>
 
-    <!-- ================= PESTAÑA 2: CUENTAS Y CRÉDITOS ================= -->
+    <!-- ================= 2. PESTAÑA CRÉDITOS ================= -->
     <div id="tabCreditos" class="tab-view" style="display: none;">
       
-      <!-- Cabecera Azul de Sección -->
-      <div style="background: linear-gradient(180deg, #002244 0%, #004b99 100%); color:white; padding: 32px 20px 24px 20px; border-radius: 0 0 24px 24px;">
-        <h1 style="font-size: 1.3rem; font-weight:700;">Cuentas y Créditos 💳</h1>
-        <p style="font-size: 0.85rem; opacity: 0.85; margin-top: 4px;">Control de bancos, líneas y cuotas vigentes</p>
+      <!-- Cabecera de Créditos -->
+      <div style="background: linear-gradient(180deg, #091e3a 0%, #173b6c 100%); color:white; padding: 32px 20px 45px 20px; border-radius: 0 0 28px 28px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+          <h1 style="font-size: 1.25rem; font-weight:700;">Créditos y Tarjetas 💳</h1>
+          <i data-lucide="shield-check" onclick="cerrarSesion()" style="cursor: pointer;"></i>
+        </div>
+        
+        <div class="balance-card">
+          <div class="balance-title">Cupo Disponible en Tarjetas / Líneas</div>
+          <div class="balance-amount" id="cupoTotalDisponible">$0</div>
+          <div style="font-size: 0.85rem; opacity: 0.95; display: flex; justify-content: space-between; margin-top: 4px;">
+            <span>Germán: <strong id="cupoGerman">$0</strong></span>
+            <span>Marcela: <strong id="cupoMarcela">$0</strong></span>
+          </div>
+          <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.2); margin: 10px 0;">
+          <div style="font-size: 0.82rem; opacity: 0.9; display:flex; justify-content: space-between;">
+            <span>Deuda Total en Cuotas:</span>
+            <span style="font-weight:700; color:#ffb4b4;" id="totalDeudaCreditos">$0</span>
+          </div>
+        </div>
       </div>
 
-      <!-- SECCIÓN CUENTAS BANCARIAS -->
-      <div class="card" style="margin-top: 20px;">
+      <!-- TARJETAS Y CUENTAS DE CRÉDITO -->
+      <div class="card" style="margin-top: 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <div class="card-title" style="margin-bottom:0;">Cuentas Bancarias</div>
-          <span style="font-size:0.75rem; color:#6b7280;" id="contadorCuentasSec">0 cuentas</span>
+          <div class="card-title" style="margin-bottom:0;">Tarjetas y Líneas de Crédito</div>
+          <span style="font-size:0.75rem; color:#6b7280;" id="contadorTarjetasCredito">0 tarjetas</span>
         </div>
-        <div class="card-subtitle">Saldos disponibles por cuenta</div>
+        <div class="card-subtitle">Cupos totales y disponibles por banco</div>
         
-        <div id="contenedorCuentasSec">
-          <div style="text-align:center; padding: 15px; color: #9ca3af;">Cargando cuentas...</div>
+        <div id="contenedorCuentasCredito">
+          <div style="text-align:center; padding: 15px; color: #9ca3af;">Cargando tarjetas...</div>
         </div>
 
-        <button class="add-btn-dashed" onclick="abrirModalCuenta()">
-          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Agregar Cuenta Bancaria
+        <button class="add-btn-dashed" onclick="abrirModalCuentaCredito()">
+          <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Agregar Tarjeta / Línea de Crédito
         </button>
       </div>
 
-      <!-- SECCIÓN CRÉDITOS Y CUOTAS -->
+      <!-- CRÉDITOS Y PRÉSTAMOS EN CUOTAS -->
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <div class="card-title" style="margin-bottom:0;">Créditos Solicitados</div>
+          <div class="card-title" style="margin-bottom:0;">Créditos en Cuotas</div>
           <span style="font-size:0.75rem; color:#6b7280;" id="contadorCreditos">0 activos</span>
         </div>
-        <div class="card-subtitle">Seguimiento de cuotas y deuda restante</div>
+        <div class="card-subtitle">Seguimiento de cuotas pactadas y monto por amortizar</div>
         
         <div id="contenedorCreditos">
-          <div style="text-align:center; padding: 15px; color: #9ca3af;">No hay créditos registrados</div>
+          <div style="text-align:center; padding: 15px; color: #9ca3af;">No hay créditos registrados aún</div>
         </div>
 
         <button class="add-btn-dashed" onclick="abrirModalCredito()">
@@ -364,15 +362,26 @@
       </div>
     </div>
 
-    <!-- BARRA INFERIOR DE NAVEGACIÓN -->
+    <!-- ================= BARRA DE NAVEGACIÓN INFERIOR PERMANENTE ================= -->
     <div class="bottom-nav">
       <button class="nav-tab active" id="btnNavInicio" onclick="cambiarPestana('inicio')">
         <i data-lucide="wallet"></i>
         <span>Inicio</span>
       </button>
+
+      <button class="nav-tab" onclick="abrirModalNuevo('gasto')">
+        <i data-lucide="minus-circle" style="color: #e63946;"></i>
+        <span>Gasto</span>
+      </button>
+
+      <button class="nav-tab" onclick="abrirModalNuevo('ingreso')">
+        <i data-lucide="plus-circle" style="color: #10b981;"></i>
+        <span>Ingreso</span>
+      </button>
+
       <button class="nav-tab" id="btnNavCreditos" onclick="cambiarPestana('creditos')">
-        <i data-lucide="landmark"></i>
-        <span>Cuentas y Créditos</span>
+        <i data-lucide="credit-card"></i>
+        <span>Créditos</span>
       </button>
     </div>
   </div>
@@ -399,7 +408,7 @@
         <div class="form-group">
           <label id="labelCuenta">¿De qué cuenta sale el dinero?</label>
           <select id="cuentaSeleccionada" required>
-            <!-- Llenado dinámicamente -->
+            <!-- Llenado dinámico -->
           </select>
         </div>
 
@@ -450,7 +459,7 @@
     </div>
   </div>
 
-  <!-- MODAL: AGREGAR / EDITAR CUENTA BANCARIA -->
+  <!-- MODAL: AGREGAR / EDITAR CUENTA BANCARIA DE INICIO -->
   <div class="modal" id="modalCuenta">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -462,7 +471,7 @@
         
         <div class="form-group">
           <label>Nombre de la Cuenta o Banco</label>
-          <input type="text" id="nombreCuenta" required placeholder="Ej: BCI Mach, Mercado Pago, Banco de Chile">
+          <input type="text" id="nombreCuenta" required placeholder="Ej: BCI Mach, Mercado Pago, BCI">
         </div>
 
         <div class="form-group">
@@ -488,7 +497,50 @@
     </div>
   </div>
 
-  <!-- MODAL: AGREGAR / EDITAR CRÉDITO -->
+  <!-- MODAL: AGREGAR / EDITAR TARJETA O CUENTA DE CRÉDITO -->
+  <div class="modal" id="modalCuentaCredito">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 id="modalCuentaCreditoTitulo" style="font-weight:700;">Tarjeta de Crédito</h3>
+        <button onclick="cerrarModal('modalCuentaCredito')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <form id="cuentaCreditoForm" onsubmit="guardarCuentaCredito(event)">
+        <input type="hidden" id="cuentaCreditoId">
+        
+        <div class="form-group">
+          <label>Entidad o Tarjeta</label>
+          <input type="text" id="nombreTarjetaCredito" required placeholder="Ej: Visa BCI, CMR Falabella, Banco de Chile">
+        </div>
+
+        <div class="form-group">
+          <label>Titular de la Tarjeta</label>
+          <select id="titularTarjetaCredito">
+            <option value="Germán">Germán</option>
+            <option value="Marcela">Marcela</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Cupo Total Aprobado ($)</label>
+          <input type="number" id="cupoTotalTarjeta" required placeholder="Ej: 1000000" inputmode="numeric">
+        </div>
+
+        <div class="form-group">
+          <label>Cupo Disponible Actual ($)</label>
+          <input type="number" id="cupoDisponibleTarjeta" required placeholder="Ej: 650000" inputmode="numeric">
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="delete-btn" id="btnBorrarTarjetaCredito" onclick="eliminarCuentaCreditoActual()" style="display:none;">
+            <i data-lucide="trash-2" style="width:18px;"></i> Borrar
+          </button>
+          <button type="submit" class="submit-btn" id="btnGuardarTarjetaCredito">Guardar Tarjeta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: AGREGAR / EDITAR CRÉDITO EN CUOTAS -->
   <div class="modal" id="modalCredito">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -499,7 +551,7 @@
         <input type="hidden" id="creditoId">
         
         <div class="form-group">
-          <label>Institución / Motivo del Crédito</label>
+          <label>Entidad / Motivo del Crédito</label>
           <input type="text" id="nombreCredito" required placeholder="Ej: Crédito BCI, Banco de Chile, Consumo">
         </div>
 
@@ -514,7 +566,7 @@
 
         <div class="form-group">
           <label>Monto Total Solicitado ($)</label>
-          <input type="number" id="montoTotalCredito" required placeholder="Ej: 1000000" inputmode="numeric">
+          <input type="number" id="montoTotalCredito" required placeholder="Ej: 1200000" inputmode="numeric">
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
@@ -530,7 +582,7 @@
 
         <div class="form-group">
           <label>Valor de Cada Cuota ($)</label>
-          <input type="number" id="valorCuota" required placeholder="Ej: 95000" inputmode="numeric">
+          <input type="number" id="valorCuota" required placeholder="Ej: 110000" inputmode="numeric">
         </div>
 
         <div class="btn-group">
@@ -544,7 +596,7 @@
   </div>
 
   <!-- SCRIPT VERSIONADO -->
-  <script src="app.js?v=5.0"></script>
+  <script src="app.js?v=6.0"></script>
 
   <!-- SERVICE WORKER -->
   <script>
