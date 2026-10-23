@@ -34,7 +34,7 @@
       --text-main: #1f2937;
       --text-muted: #6b7280;
       --danger: #e63946;
-      --success: #2a9d8f;
+      --success: #10b981;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg-gray); padding-bottom: 90px; color: var(--text-main); }
@@ -66,7 +66,6 @@
     .theme-rainy { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important; }
     .theme-night { background: linear-gradient(180deg, #090d16 0%, #1e1b4b 100%) !important; }
 
-    /* Capa animada con pointer-events desactivado totalmente */
     .weather-animation-layer {
       position: absolute; inset: 0; pointer-events: none !important; overflow: hidden; z-index: 0;
     }
@@ -120,12 +119,9 @@
       border-radius: 20px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.18);
     }
     .balance-title { font-size: 0.85rem; opacity: 0.85; margin-bottom: 6px; }
-    .balance-amount { font-size: 2.3rem; font-weight: 800; margin-bottom: 12px; }
+    .balance-amount { font-size: 2.3rem; font-weight: 800; margin-bottom: 8px; }
 
-    .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.25); border-radius: 10px; overflow: hidden; margin-top: 10px; }
-    .progress-bar-fill { height: 100%; background: #48cae4; border-radius: 10px; transition: width 0.4s ease; }
-
-    /* Acciones Rápidas con prioridad z-index alta para Android */
+    /* Acciones Rápidas (3 botones) */
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -141,25 +137,40 @@
     }
     .action-icon {
       width: 46px; height: 46px; background: #eaf2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0056b3;
-      pointer-events: none; /* Asegura que el click pase al botón */
+      pointer-events: none;
     }
-    .action-icon.income {
-      background: #e6f7f4; color: #10b981;
-    }
+    .action-icon.income { background: #e6f7f4; color: #10b981; }
 
     .card { background: white; margin: 16px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); position: relative; z-index: 10; }
     .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
     .card-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; }
 
+    /* Tarjetas de Cuentas */
+    .accounts-section-title {
+      font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #6b7280; margin: 12px 0 6px 0; letter-spacing: 0.5px;
+    }
+    .account-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #f8fafc; padding: 12px 14px; border-radius: 14px; border: 1px solid #e2e8f0;
+      margin-bottom: 8px; cursor: pointer;
+    }
+    .account-item:active { background: #f1f5f9; }
+    .account-name { font-weight: 600; font-size: 0.95rem; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+    .account-sub { font-size: 0.72rem; color: var(--text-muted); }
+    .account-balance { font-size: 1.05rem; font-weight: 700; color: #003875; }
+
+    .add-account-btn {
+      width: 100%; border: 1.5px dashed #cbd5e1; background: #f8fafc; color: #0056b3; padding: 12px;
+      border-radius: 14px; font-weight: 700; font-size: 0.85rem; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; gap: 6px; margin-top: 10px;
+    }
+
+    /* Gráfico */
     .chart-container { position: relative; width: 190px; height: 190px; margin: 0 auto; }
     .chart-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
     .chart-center-text .amount { font-size: 1.15rem; font-weight: 800; color: #003875; }
 
-    .payers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
-    .payer-box { background: #f8fafc; padding: 12px 14px; border-radius: 14px; border: 1px solid #e2e8f0; }
-    .payer-name { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
-    .payer-amount { font-size: 1.1rem; font-weight: 700; color: #003875; margin-top: 4px; }
-
+    /* Movimientos */
     .movement-item {
       display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f3f5; cursor: pointer;
       user-select: none;
@@ -170,6 +181,7 @@
     .movement-amount-income { font-weight: 700; color: var(--success); font-size: 1rem; text-align: right; }
     .tap-hint { font-size: 0.68rem; color: #3b82f6; margin-top: 2px; }
 
+    /* Modales */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 10000; align-items: flex-end; }
     .modal.active { display: flex; }
     .modal-content { background: white; width: 100%; border-radius: 26px 26px 0 0; padding: 24px; max-height: 88vh; overflow-y: auto; animation: slideUp 0.2s ease-out; }
@@ -215,18 +227,12 @@
         </div>
         
         <div class="balance-card">
-          <div class="balance-title">Saldo disponible</div>
+          <div class="balance-title">Dinero total disponible (todas las cuentas)</div>
           <div class="balance-amount" id="saldoDisponible">$0</div>
-          
-          <div style="font-size: 0.85rem; opacity: 0.9; display: flex; justify-content: space-between; align-items: center;">
-            <span>Presupuesto base: <strong id="presupuestoTotal">$0</strong></span>
-            <span style="text-decoration: underline; cursor: pointer; font-size: 0.8rem;" onclick="editarPresupuesto()">Editar base</span>
+          <div style="font-size: 0.8rem; opacity: 0.9; display: flex; justify-content: space-between;">
+            <span>Él: <strong id="totalEl">$0</strong></span>
+            <span>Ella: <strong id="totalElla">$0</strong></span>
           </div>
-          
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressBar" style="width: 0%;"></div>
-          </div>
-          <div style="font-size: 0.72rem; opacity: 0.8; margin-top: 6px; text-align: right;" id="porcentajeTexto">0% gastado</div>
         </div>
       </div>
     </div>
@@ -247,20 +253,21 @@
       </button>
     </div>
 
-    <!-- BALANCE DE PAGOS -->
+    <!-- TARJETA: RESUMEN DE CUENTAS BANCARIAS -->
     <div class="card">
-      <div class="card-title">Balance de Pagos</div>
-      <div class="card-subtitle">Total aportado durante el viaje</div>
-      <div class="payers-grid">
-        <div class="payer-box">
-          <div class="payer-name">Él</div>
-          <div class="payer-amount" id="pagoEl">$0</div>
-        </div>
-        <div class="payer-box">
-          <div class="payer-name">Ella</div>
-          <div class="payer-amount" id="pagoElla">$0</div>
-        </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <div class="card-title" style="margin-bottom:0;">Cuentas y Saldos</div>
+        <span style="font-size:0.75rem; color:#6b7280;" id="contadorCuentas">0 cuentas</span>
       </div>
+      <div class="card-subtitle">Toca cualquier cuenta para editar su saldo</div>
+      
+      <div id="contenedorCuentas">
+        <div style="text-align:center; padding: 15px; color: #9ca3af;">Cargando cuentas...</div>
+      </div>
+
+      <button class="add-account-btn" onclick="abrirModalCuenta()">
+        <i data-lucide="plus" style="width: 16px; height: 16px;"></i> Agregar Cuenta Bancaria
+      </button>
     </div>
 
     <!-- GRÁFICO DISTRIBUCIÓN -->
@@ -289,26 +296,37 @@
     </div>
   </div>
 
-  <!-- MODAL EDITAR / AGREGAR -->
+  <!-- MODAL: REGISTRAR / EDITAR MOVIMIENTO (GASTO O INGRESO) -->
   <div class="modal" id="modalGasto">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <h3 id="modalTitulo" style="font-weight:700;">Añadir Movimiento</h3>
-        <button onclick="cerrarModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+        <button onclick="cerrarModal('modalGasto')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
       </div>
       <form id="gastoForm" onsubmit="guardarMovimiento(event)">
         <input type="hidden" id="movimientoId">
         <input type="hidden" id="tipoMovimiento" value="gasto">
+        <input type="hidden" id="cuentaPreviaId">
+        <input type="hidden" id="montoPrevio">
         <input type="hidden" id="ubicacionGasto">
         
         <div class="form-group">
           <label id="labelMonto">Monto ($)</label>
           <input type="number" id="monto" required placeholder="Ej: 15000" inputmode="numeric">
         </div>
+
+        <div class="form-group">
+          <label id="labelCuenta">¿De qué cuenta sale el dinero?</label>
+          <select id="cuentaSeleccionada" required>
+            <!-- Se llena dinámicamente con las cuentas -->
+          </select>
+        </div>
+
         <div class="form-group">
           <label id="labelDescripcion">Descripción</label>
           <input type="text" id="descripcion" required placeholder="Ej: Almuerzo costanera">
         </div>
+
         <div class="form-group" id="grupoCategoria">
           <label>Categoría</label>
           <select id="categoria">
@@ -320,21 +338,16 @@
             <option value="Otros / Emergencias">Otros / Emergencias</option>
           </select>
         </div>
-        <div class="form-group">
-          <label id="labelResponsable">¿Quién pagó / aportó?</label>
-          <select id="pagador">
-            <option value="Él">Él</option>
-            <option value="Ella">Ella</option>
-            <option value="Ambos">Ambos</option>
-          </select>
-        </div>
+
         <div class="form-group">
           <label>Medio</label>
           <select id="metodo">
-            <option value="Tarjeta">Tarjeta / Transferencia</option>
+            <option value="Tarjeta">Tarjeta / Débito</option>
+            <option value="Transferencia">Transferencia</option>
             <option value="Efectivo">Efectivo</option>
           </select>
         </div>
+
         <div class="form-group">
           <label>Fecha (DD/MM)</label>
           <input type="text" id="fechaGasto" placeholder="Ej: 22/10">
@@ -355,8 +368,46 @@
     </div>
   </div>
 
+  <!-- MODAL: AGREGAR / EDITAR CUENTA BANCARIA -->
+  <div class="modal" id="modalCuenta">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h3 id="modalCuentaTitulo" style="font-weight:700;">Agregar Cuenta</h3>
+        <button onclick="cerrarModal('modalCuenta')" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+      </div>
+      <form id="cuentaForm" onsubmit="guardarCuenta(event)">
+        <input type="hidden" id="cuentaId">
+        
+        <div class="form-group">
+          <label>Nombre de la Cuenta o Banco</label>
+          <input type="text" id="nombreCuenta" required placeholder="Ej: BCI Mach, Mercado Pago, Banco de Chile">
+        </div>
+
+        <div class="form-group">
+          <label>Titular de la Cuenta</label>
+          <select id="titularCuenta">
+            <option value="Él">Él</option>
+            <option value="Ella">Ella</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Saldo Actual en la Cuenta ($)</label>
+          <input type="number" id="saldoCuenta" required placeholder="Ej: 150000" inputmode="numeric">
+        </div>
+
+        <div class="btn-group">
+          <button type="button" class="delete-btn" id="btnBorrarCuenta" onclick="eliminarCuentaActual()" style="display:none;">
+            <i data-lucide="trash-2" style="width:18px;"></i> Borrar
+          </button>
+          <button type="submit" class="submit-btn" id="btnGuardarCuenta">Guardar Cuenta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- SCRIPT VERSIONADO -->
-  <script src="app.js?v=3.1"></script>
+  <script src="app.js?v=4.0"></script>
 
   <!-- SERVICE WORKER -->
   <script>
