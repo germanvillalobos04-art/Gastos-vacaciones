@@ -36,7 +36,7 @@
       --danger: #e63946;
       --success: #2a9d8f;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg-gray); padding-bottom: 90px; color: var(--text-main); }
 
     /* Pantalla PIN */
@@ -52,7 +52,7 @@
       background: #007bff; color: white; border: none; padding: 14px 36px; font-weight: 700; border-radius: 14px; font-size: 1rem; cursor: pointer;
     }
 
-    /* Cabecera con animaciones */
+    /* Cabecera */
     .header {
       position: relative;
       background: linear-gradient(180deg, #002244 0%, #004b99 100%);
@@ -66,9 +66,11 @@
     .theme-rainy { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important; }
     .theme-night { background: linear-gradient(180deg, #090d16 0%, #1e1b4b 100%) !important; }
 
+    /* Capa animada con pointer-events desactivado totalmente */
     .weather-animation-layer {
-      position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1;
+      position: absolute; inset: 0; pointer-events: none !important; overflow: hidden; z-index: 0;
     }
+    .sun-flare, .rain-drop, .cloud-shape, .star { pointer-events: none !important; }
 
     .sun-flare {
       position: absolute; top: -50px; right: -50px; width: 200px; height: 200px;
@@ -103,7 +105,7 @@
     }
     @keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 0.9; transform: scale(1.3); } }
 
-    .header-content { position: relative; z-index: 2; }
+    .header-content { position: relative; z-index: 1; }
     .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
     .header-top h1 { font-size: 1.25rem; font-weight: 700; }
     
@@ -123,26 +125,29 @@
     .progress-bar-bg { width: 100%; height: 8px; background: rgba(255,255,255,0.25); border-radius: 10px; overflow: hidden; margin-top: 10px; }
     .progress-bar-fill { height: 100%; background: #48cae4; border-radius: 10px; transition: width 0.4s ease; }
 
-    /* Acciones Rápidas (3 Botones centrados) */
+    /* Acciones Rápidas con prioridad z-index alta para Android */
     .quick-actions {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
       margin: -42px 16px 20px 16px;
       background: white; padding: 14px 10px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-      position: relative; z-index: 3;
+      position: relative;
+      z-index: 20 !important;
     }
     .action-btn {
       display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; font-size: 0.75rem; font-weight: 600; color: #0b4f9c; cursor: pointer;
+      user-select: none;
     }
     .action-icon {
       width: 46px; height: 46px; background: #eaf2ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #0056b3;
+      pointer-events: none; /* Asegura que el click pase al botón */
     }
     .action-icon.income {
       background: #e6f7f4; color: #10b981;
     }
 
-    .card { background: white; margin: 16px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .card { background: white; margin: 16px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.04); position: relative; z-index: 10; }
     .card-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
     .card-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px; }
 
@@ -157,15 +162,15 @@
 
     .movement-item {
       display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #f1f3f5; cursor: pointer;
+      user-select: none;
     }
-    .movement-item:active { background: #f8fafc; }
     .movement-desc { font-weight: 600; font-size: 0.95rem; }
     .movement-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; display: flex; align-items: center; gap: 5px; }
     .movement-amount-expense { font-weight: 700; color: var(--danger); font-size: 1rem; text-align: right; }
     .movement-amount-income { font-weight: 700; color: var(--success); font-size: 1rem; text-align: right; }
     .tap-hint { font-size: 0.68rem; color: #3b82f6; margin-top: 2px; }
 
-    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 1000; align-items: flex-end; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 10000; align-items: flex-end; }
     .modal.active { display: flex; }
     .modal-content { background: white; width: 100%; border-radius: 26px 26px 0 0; padding: 24px; max-height: 88vh; overflow-y: auto; animation: slideUp 0.2s ease-out; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -226,7 +231,7 @@
       </div>
     </div>
 
-    <!-- ACCIONES RÁPIDAS (Gasto, Ingreso, Actualizar) -->
+    <!-- ACCIONES RÁPIDAS -->
     <div class="quick-actions">
       <button class="action-btn" onclick="abrirModalNuevo('gasto')">
         <div class="action-icon"><i data-lucide="minus-circle"></i></div>
@@ -284,7 +289,7 @@
     </div>
   </div>
 
-  <!-- MODAL EDITAR / AGREGAR (GASTO O INGRESO) -->
+  <!-- MODAL EDITAR / AGREGAR -->
   <div class="modal" id="modalGasto">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -350,8 +355,8 @@
     </div>
   </div>
 
-  <!-- SCRIPT EXTERNO VERSIONADO -->
-  <script src="app.js?v=3.0"></script>
+  <!-- SCRIPT VERSIONADO -->
+  <script src="app.js?v=3.1"></script>
 
   <!-- SERVICE WORKER -->
   <script>
