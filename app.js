@@ -3,7 +3,7 @@ const FIREBASE_BASE_URL = "https://gastos-522f9-default-rtdb.firebaseio.com/";
 const PIN_CORRECTO = "1610";
 
 let chartInstance = null;
-let presupuestoActual = 400000;
+let cuentasCache = {};
 let movimientosCache = {};
 let ubicacionActualDetectada = "Chile";
 
@@ -184,24 +184,68 @@ function crearEstrellas(container) {
 }
 
 // -------------------------------------------------------------
-// GESTIÓN DE DATOS EN FIREBASE (GASTOS E INGRESOS)
+// GESTIÓN DE DATOS EN FIREBASE (CUENTAS Y GASTOS)
 // -------------------------------------------------------------
 async function cargarDatos() {
   try {
-    const resPres = await fetch(FIREBASE_BASE_URL + "presupuesto.json");
-    const presData = await resPres.json();
-    if (presData) presupuestoActual = Number(presData);
+    // 1. Cargar Cuentas Bancarias
+    const resCuentas = await fetch(FIREBASE_BASE_URL + "cuentas.json");
+    const dataCuentas = await resCuentas.json();
+    cuentasCache = dataCuentas || {};
 
+    // Cuentas iniciales si está vacío
+    if (!dataCuentas || Object.keys(dataCuentas).length === 0) {
+      const cuentasDefault = {
+        c1: { nombre: "Mercado Pago", titular: "Él", saldo: 150000 },
+        c2: { nombre: "BCI Mach", titular: "Él", saldo: 80000 },
+        c3: { nombre: "BCI", titular: "Él", saldo: 90000 },
+        c4: { nombre: "Banco de Chile", titular: "Ella", saldo: 80000 }
+      };
+      await fetch(FIREBASE_BASE_URL + "cuentas.json", {
+        method: 'PUT',
+        body: JSON.stringify(cuentasDefault)
+      });
+      cuentasCache = cuentasDefault;
+    }
+
+    // 2. Cargar Movimientos
     const resGastos = await fetch(FIREBASE_BASE_URL + "gastos.json");
     const movData = await resGastos.json();
     movimientosCache = movData || {};
 
-    let totalGastado = 0;
-    let totalIngresos = 0;
+    // Renderizar Cuentas y calcular total
+    let totalGlobalDisponible = 0;
     let totalEl = 0;
     let totalElla = 0;
+    const listaCuentasEl = [];
+    const listaCuentasElla = [];
+
+    Object.keys(cuentasCache).forEach(key => {
+      const c = cuentasCache[key];
+      const s = Number(c.saldo) || 0;
+      totalGlobalDisponible += s;
+
+      if (c.titular === 'Ella') {
+        totalElla += s;
+        listaCuentasElla.push({ ...c, id: key });
+      } else {
+        totalEl += s;
+        listaCuentasEl.push({ ...c, id: key });
+      }
+    });
+
+    document.getElementById('saldoDisponible').innerText = formatCLP(totalGlobalDisponible);
+    document.getElementById('totalEl').innerText = formatCLP(totalEl);
+    document.getElementById('totalElla').innerText = formatCLP(totalElla);
+    document.getElementById('contadorCuentas').innerText = (listaCuentasEl.length + listaCuentasElla.length) + ' cuentas';
+
+    renderizarCuentasHTML(listaCuentasEl, listaCuentasElla);
+    actualizarSelectCuentas();
+
+    // 3. Procesar Gastos y Categorías
+    let totalGastado = 0;
     const categoriaTotales = {};
-    const lista = [];
+    const listaMovimientos = [];
 
     if (movData) {
       Object.keys(movData).forEach(key => {
@@ -209,47 +253,19 @@ async function cargarDatos() {
         const m = Number(item.monto) || 0;
         const tipo = item.tipo || 'gasto';
 
-        if (tipo === 'ingreso') {
-          totalIngresos += m;
-        } else {
+        if (tipo === 'gasto') {
           totalGastado += m;
           categoriaTotales[item.categoria] = (categoriaTotales[item.categoria] || 0) + m;
-          
-          if (item.pagador === 'Él') totalEl += m;
-          else if (item.pagador === 'Ella') totalElla += m;
-          else if (item.pagador === 'Ambos') { totalEl += m / 2; totalElla += m / 2; }
         }
 
-        lista.push({ ...item, id: key });
+        listaMovimientos.push({ ...item, id: key });
       });
     }
 
-    // El saldo disponible toma en cuenta presupuesto + ingresos - gastos
-    const saldoDisponible = (presupuestoActual + totalIngresos) - totalGastado;
-    
-    const elPres = document.getElementById('presupuestoTotal');
-    const elSaldo = document.getElementById('saldoDisponible');
-    const elGastado = document.getElementById('chartTotalGastos');
-    const elPagoEl = document.getElementById('pagoEl');
-    const elPagoElla = document.getElementById('pagoElla');
-    const elContador = document.getElementById('contadorMovimientos');
+    document.getElementById('chartTotalGastos').innerText = formatCLP(totalGastado);
+    document.getElementById('contadorMovimientos').innerText = listaMovimientos.length + ' movimientos';
 
-    if (elPres) elPres.innerText = formatCLP(presupuestoActual);
-    if (elSaldo) elSaldo.innerText = formatCLP(saldoDisponible);
-    if (elGastado) elGastado.innerText = formatCLP(totalGastado);
-    if (elPagoEl) elPagoEl.innerText = formatCLP(totalEl);
-    if (elPagoElla) elPagoElla.innerText = formatCLP(totalElla);
-    if (elContador) elContador.innerText = lista.length + ' movimientos';
-
-    // Barra de progreso considerando ingresos adicionales
-    const presupuestoEfectivo = presupuestoActual + totalIngresos;
-    const pct = presupuestoEfectivo > 0 ? Math.min(100, Math.round((totalGastado / presupuestoEfectivo) * 100)) : 0;
-    const bar = document.getElementById('progressBar');
-    const pctTxt = document.getElementById('porcentajeTexto');
-    if (bar) bar.style.width = pct + '%';
-    if (pctTxt) pctTxt.innerText = pct + '% gastado del presupuesto';
-
-    // Gráfico de categorías (solo de gastos)
+    // Gráfico de Dona
     const labels = Object.keys(categoriaTotales);
     const dataValues = Object.values(categoriaTotales);
     const chartEl = document.getElementById('gastosChart');
@@ -272,18 +288,18 @@ async function cargarDatos() {
       });
     }
 
-    // Lista de movimientos
-    lista.reverse();
+    // Lista de Movimientos
+    listaMovimientos.reverse();
     const listaCont = document.getElementById('listaMovimientos');
     if (listaCont) {
-      if (lista.length === 0) {
+      if (listaMovimientos.length === 0) {
         listaCont.innerHTML = '<div style="text-align:center; padding:15px; color:#9ca3af;">Aún no hay movimientos registrados</div>';
       } else {
-        listaCont.innerHTML = lista.map(m => {
+        listaCont.innerHTML = listaMovimientos.map(m => {
           const esIngreso = m.tipo === 'ingreso';
           const signo = esIngreso ? '+' : '-';
           const claseMonto = esIngreso ? 'movement-amount-income' : 'movement-amount-expense';
-          const labelCategoria = esIngreso ? 'Ingreso / Aporte' : m.categoria;
+          const nombreCuenta = m.cuentaNombre ? ` • 💳 ${m.cuentaNombre}` : '';
 
           return `
             <div class="movement-item" onclick="abrirModalEditar('${m.id}')">
@@ -291,7 +307,8 @@ async function cargarDatos() {
                 <div class="movement-desc">${m.descripcion}</div>
                 <div class="movement-sub">
                   <span>${m.fecha || 'Hoy'}</span> • 
-                  <span>${labelCategoria} (${m.pagador})</span>
+                  <span>${m.categoria}</span>
+                  ${nombreCuenta}
                   ${m.ubicacion ? ` • <span>📍 ${m.ubicacion}</span>` : ''}
                 </div>
                 <div class="tap-hint">Tocar para editar / borrar</div>
@@ -308,28 +325,150 @@ async function cargarDatos() {
   }
 }
 
-async function editarPresupuesto() {
-  const nuevo = prompt("Ingresa el presupuesto base de vacaciones ($):", presupuestoActual);
-  if (nuevo && !isNaN(nuevo)) {
-    await fetch(FIREBASE_BASE_URL + "presupuesto.json", {
-      method: 'PUT',
-      body: JSON.stringify(Number(nuevo))
+function renderizarCuentasHTML(cuentasEl, cuentasElla) {
+  const cont = document.getElementById('contenedorCuentas');
+  if (!cont) return;
+
+  let html = '';
+
+  if (cuentasEl.length > 0) {
+    html += '<div class="accounts-section-title">Cuentas de Él</div>';
+    cuentasEl.forEach(c => {
+      html += `
+        <div class="account-item" onclick="abrirModalEditarCuenta('${c.id}')">
+          <div>
+            <div class="account-name"><i data-lucide="wallet" style="width:16px;height:16px;color:#0056b3;"></i> ${c.nombre}</div>
+            <div class="account-sub">Titular: ${c.titular}</div>
+          </div>
+          <div class="account-balance">${formatCLP(c.saldo)}</div>
+        </div>
+      `;
     });
+  }
+
+  if (cuentasElla.length > 0) {
+    html += '<div class="accounts-section-title" style="margin-top:14px;">Cuentas de Ella</div>';
+    cuentasElla.forEach(c => {
+      html += `
+        <div class="account-item" onclick="abrirModalEditarCuenta('${c.id}')">
+          <div>
+            <div class="account-name"><i data-lucide="wallet" style="width:16px;height:16px;color:#0056b3;"></i> ${c.nombre}</div>
+            <div class="account-sub">Titular: ${c.titular}</div>
+          </div>
+          <div class="account-balance">${formatCLP(c.saldo)}</div>
+        </div>
+      `;
+    });
+  }
+
+  cont.innerHTML = html;
+}
+
+function actualizarSelectCuentas() {
+  const sel = document.getElementById('cuentaSeleccionada');
+  if (!sel) return;
+
+  sel.innerHTML = '';
+  Object.keys(cuentasCache).forEach(key => {
+    const c = cuentasCache[key];
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.text = `${c.nombre} (${c.titular}) - Saldo: ${formatCLP(c.saldo)}`;
+    sel.appendChild(opt);
+  });
+}
+
+// -------------------------------------------------------------
+// GESTIÓN DE CUENTAS (AGREGAR / EDITAR / BORRAR)
+// -------------------------------------------------------------
+function abrirModalCuenta() {
+  document.getElementById('cuentaForm').reset();
+  document.getElementById('cuentaId').value = "";
+  document.getElementById('modalCuentaTitulo').innerText = "Agregar Cuenta Bancaria";
+  document.getElementById('btnGuardarCuenta').innerText = "Guardar Cuenta";
+  document.getElementById('btnBorrarCuenta').style.display = "none";
+  document.getElementById('modalCuenta').classList.add('active');
+}
+
+function abrirModalEditarCuenta(id) {
+  const c = cuentasCache[id];
+  if (!c) return;
+
+  document.getElementById('cuentaId').value = id;
+  document.getElementById('nombreCuenta').value = c.nombre;
+  document.getElementById('titularCuenta').value = c.titular;
+  document.getElementById('saldoCuenta').value = c.saldo;
+
+  document.getElementById('modalCuentaTitulo').innerText = "Editar Cuenta";
+  document.getElementById('btnGuardarCuenta').innerText = "Actualizar Cuenta";
+  document.getElementById('btnBorrarCuenta').style.display = "flex";
+  document.getElementById('modalCuenta').classList.add('active');
+  initIcons();
+}
+
+async function guardarCuenta(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btnGuardarCuenta');
+  btn.innerText = 'Guardando...';
+  btn.disabled = true;
+
+  const id = document.getElementById('cuentaId').value;
+  const payload = {
+    nombre: document.getElementById('nombreCuenta').value,
+    titular: document.getElementById('titularCuenta').value,
+    saldo: Number(document.getElementById('saldoCuenta').value)
+  };
+
+  try {
+    if (id) {
+      await fetch(`${FIREBASE_BASE_URL}cuentas/${id}.json`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+    } else {
+      await fetch(FIREBASE_BASE_URL + "cuentas.json", {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    }
+    btn.innerText = 'Guardado';
+    btn.disabled = false;
+    cerrarModal('modalCuenta');
+    cargarDatos();
+  } catch (err) {
+    btn.innerText = 'Error al guardar';
+    btn.disabled = false;
+  }
+}
+
+async function eliminarCuentaActual() {
+  const id = document.getElementById('cuentaId').value;
+  if (!id) return;
+  if (confirm("¿Estás seguro de que deseas eliminar esta cuenta?")) {
+    await fetch(`${FIREBASE_BASE_URL}cuentas/${id}.json`, {
+      method: 'DELETE'
+    });
+    cerrarModal('modalCuenta');
     cargarDatos();
   }
 }
 
+// -------------------------------------------------------------
+// GESTIÓN DE MOVIMIENTOS (GASTOS E INGRESOS VINCULADOS A CUENTAS)
+// -------------------------------------------------------------
 function abrirModalNuevo(tipo = 'gasto') {
   document.getElementById('gastoForm').reset();
   document.getElementById('movimientoId').value = "";
   document.getElementById('tipoMovimiento').value = tipo;
+  document.getElementById('cuentaPreviaId').value = "";
+  document.getElementById('montoPrevio').value = "0";
   document.getElementById('btnBorrar').style.display = "none";
   
   const titulo = document.getElementById('modalTitulo');
   const btn = document.getElementById('btnGuardar');
   const grupoCat = document.getElementById('grupoCategoria');
   const labelDesc = document.getElementById('labelDescripcion');
-  const labelResp = document.getElementById('labelResponsable');
+  const labelCuenta = document.getElementById('labelCuenta');
 
   if (tipo === 'ingreso') {
     titulo.innerText = "Añadir Ingreso";
@@ -337,8 +476,8 @@ function abrirModalNuevo(tipo = 'gasto') {
     btn.classList.add('income-btn');
     grupoCat.style.display = "none";
     labelDesc.innerText = "Motivo del ingreso";
-    document.getElementById('descripcion').placeholder = "Ej: Recarga de presupuesto / Devolución";
-    labelResp.innerText = "¿Quién aportó el dinero?";
+    document.getElementById('descripcion').placeholder = "Ej: Depósito / Sueldo / Transferencia";
+    labelCuenta.innerText = "¿A qué cuenta entra el dinero?";
   } else {
     titulo.innerText = "Añadir Nuevo Gasto";
     btn.innerText = "Guardar Gasto";
@@ -346,7 +485,7 @@ function abrirModalNuevo(tipo = 'gasto') {
     grupoCat.style.display = "block";
     labelDesc.innerText = "Descripción";
     document.getElementById('descripcion').placeholder = "Ej: Almuerzo costanera";
-    labelResp.innerText = "¿Quién pagó?";
+    labelCuenta.innerText = "¿De qué cuenta sale el dinero?";
   }
 
   const hoy = new Date();
@@ -366,17 +505,20 @@ function abrirModalEditar(id) {
   const tipo = item.tipo || 'gasto';
   document.getElementById('movimientoId').value = id;
   document.getElementById('tipoMovimiento').value = tipo;
+  document.getElementById('cuentaPreviaId').value = item.cuentaId || '';
+  document.getElementById('montoPrevio').value = item.monto || 0;
+
   document.getElementById('monto').value = item.monto;
   document.getElementById('descripcion').value = item.descripcion;
-  document.getElementById('pagador').value = item.pagador;
   document.getElementById('metodo').value = item.metodo || 'Tarjeta';
   document.getElementById('fechaGasto').value = item.fecha || '';
+  if (item.cuentaId) document.getElementById('cuentaSeleccionada').value = item.cuentaId;
 
   const titulo = document.getElementById('modalTitulo');
   const btn = document.getElementById('btnGuardar');
   const grupoCat = document.getElementById('grupoCategoria');
   const labelDesc = document.getElementById('labelDescripcion');
-  const labelResp = document.getElementById('labelResponsable');
+  const labelCuenta = document.getElementById('labelCuenta');
 
   if (tipo === 'ingreso') {
     titulo.innerText = "Editar Ingreso";
@@ -384,7 +526,7 @@ function abrirModalEditar(id) {
     btn.classList.add('income-btn');
     grupoCat.style.display = "none";
     labelDesc.innerText = "Motivo del ingreso";
-    labelResp.innerText = "¿Quién aportó el dinero?";
+    labelCuenta.innerText = "¿A qué cuenta entró el dinero?";
   } else {
     titulo.innerText = "Editar Gasto";
     btn.innerText = "Actualizar Gasto";
@@ -392,7 +534,7 @@ function abrirModalEditar(id) {
     grupoCat.style.display = "block";
     document.getElementById('categoria').value = item.categoria;
     labelDesc.innerText = "Descripción";
-    labelResp.innerText = "¿Quién pagó?";
+    labelCuenta.innerText = "¿De qué cuenta salió el dinero?";
   }
 
   document.getElementById('btnBorrar').style.display = "flex";
@@ -405,8 +547,8 @@ function abrirModalEditar(id) {
   initIcons();
 }
 
-function cerrarModal() {
-  const modal = document.getElementById('modalGasto');
+function cerrarModal(id) {
+  const modal = document.getElementById(id);
   if (modal) modal.classList.remove('active');
 }
 
@@ -418,19 +560,51 @@ async function guardarMovimiento(e) {
 
   const id = document.getElementById('movimientoId').value;
   const tipo = document.getElementById('tipoMovimiento').value;
+  const montoNuevo = Number(document.getElementById('monto').value);
+  const cuentaId = document.getElementById('cuentaSeleccionada').value;
+  const cuentaObj = cuentasCache[cuentaId];
+  const nombreCuenta = cuentaObj ? cuentaObj.nombre : 'General';
+  const titular = cuentaObj ? cuentaObj.titular : 'Ambos';
+
+  const cuentaPreviaId = document.getElementById('cuentaPreviaId').value;
+  const montoPrevio = Number(document.getElementById('montoPrevio').value) || 0;
 
   const payload = {
     tipo: tipo,
-    monto: Number(document.getElementById('monto').value),
+    monto: montoNuevo,
+    cuentaId: cuentaId,
+    cuentaNombre: nombreCuenta,
+    pagador: titular,
     descripcion: document.getElementById('descripcion').value,
     categoria: tipo === 'ingreso' ? 'Ingreso' : document.getElementById('categoria').value,
-    pagador: document.getElementById('pagador').value,
     metodo: document.getElementById('metodo').value,
     fecha: document.getElementById('fechaGasto').value,
     ubicacion: document.getElementById('ubicacionGasto').value || ubicacionActualDetectada
   };
 
   try {
+    // 1. Revertir saldo de cuenta previa si era edición
+    if (id && cuentaPreviaId && cuentasCache[cuentaPreviaId]) {
+      const prevAccount = cuentasCache[cuentaPreviaId];
+      const ajuste = tipo === 'gasto' ? montoPrevio : -montoPrevio;
+      prevAccount.saldo = Number(prevAccount.saldo) + ajuste;
+      await fetch(`${FIREBASE_BASE_URL}cuentas/${cuentaPreviaId}.json`, {
+        method: 'PUT',
+        body: JSON.stringify(prevAccount)
+      });
+    }
+
+    // 2. Aplicar nuevo descuento/ingreso en la cuenta seleccionada
+    if (cuentaObj) {
+      const delta = tipo === 'gasto' ? -montoNuevo : montoNuevo;
+      cuentaObj.saldo = Number(cuentaObj.saldo) + delta;
+      await fetch(`${FIREBASE_BASE_URL}cuentas/${cuentaId}.json`, {
+        method: 'PUT',
+        body: JSON.stringify(cuentaObj)
+      });
+    }
+
+    // 3. Guardar el movimiento
     if (id) {
       await fetch(`${FIREBASE_BASE_URL}gastos/${id}.json`, {
         method: 'PUT',
@@ -442,9 +616,10 @@ async function guardarMovimiento(e) {
         body: JSON.stringify(payload)
       });
     }
+
     btn.innerText = 'Guardado';
     btn.disabled = false;
-    cerrarModal();
+    cerrarModal('modalGasto');
     cargarDatos();
   } catch (err) {
     btn.innerText = 'Error al guardar';
@@ -456,10 +631,22 @@ async function eliminarMovimientoActual() {
   const id = document.getElementById('movimientoId').value;
   if (!id) return;
   if (confirm("¿Estás seguro de que deseas eliminar este registro?")) {
+    const item = movimientosCache[id];
+    if (item && item.cuentaId && cuentasCache[item.cuentaId]) {
+      // Revertir el dinero a la cuenta bancaria
+      const acc = cuentasCache[item.cuentaId];
+      const ajuste = item.tipo === 'gasto' ? Number(item.monto) : -Number(item.monto);
+      acc.saldo = Number(acc.saldo) + ajuste;
+      await fetch(`${FIREBASE_BASE_URL}cuentas/${item.cuentaId}.json`, {
+        method: 'PUT',
+        body: JSON.stringify(acc)
+      });
+    }
+
     await fetch(`${FIREBASE_BASE_URL}gastos/${id}.json`, {
       method: 'DELETE'
     });
-    cerrarModal();
+    cerrarModal('modalGasto');
     cargarDatos();
   }
 }
